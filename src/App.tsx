@@ -12,6 +12,8 @@ import Strength from "./pages/Strength";
 import MindMuscle from "./pages/MindMuscle";
 import Water from "./pages/Water";
 import Videos from "./pages/Videos";
+import Cardio from "./pages/Cardio";
+import Steps from "./pages/Steps";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -33,6 +35,8 @@ const App = () => (
           <Route path="/mindmuscle" element={<MindMuscle />} />
           <Route path="/water" element={<Water />} />
           <Route path="/videos" element={<Videos />} />
+          <Route path="/cardio" element={<Cardio />} />
+          <Route path="/steps" element={<Steps />} />
           <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

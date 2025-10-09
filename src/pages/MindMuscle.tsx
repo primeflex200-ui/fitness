@@ -1,22 +1,25 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Music, Play, Pause, SkipForward, Brain, Volume2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 const MindMuscle = () => {
+  const audioRef = useRef<HTMLAudioElement>(null);
   const [currentTrack, setCurrentTrack] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
+  const [volume, setVolume] = useState(0.7);
 
   const playlist = [
-    { title: "Dia Delica", artist: "Workout Vibes", bpm: 140 },
-    { title: "Move Groove", artist: "Fitness Beats", bpm: 128 },
-    { title: "Flex It Out", artist: "Gym Warriors", bpm: 135 },
-    { title: "Power Surge", artist: "Elite Training", bpm: 145 },
-    { title: "Iron Will", artist: "Strong Minds", bpm: 130 },
-    { title: "Beast Mode", artist: "Muscle Music", bpm: 142 }
+    { title: "Dia Delica", artist: "Workout Vibes", bpm: 140, url: "https://assets.mixkit.co/music/preview/mixkit-tech-house-vibes-130.mp3" },
+    { title: "Move Groove", artist: "Fitness Beats", bpm: 128, url: "https://assets.mixkit.co/music/preview/mixkit-getting-ready-for-the-show-124.mp3" },
+    { title: "Flex It Out", artist: "Gym Warriors", bpm: 135, url: "https://assets.mixkit.co/music/preview/mixkit-hip-hop-02-738.mp3" },
+    { title: "Power Surge", artist: "Elite Training", bpm: 145, url: "https://assets.mixkit.co/music/preview/mixkit-raise-me-up-122.mp3" },
+    { title: "Iron Will", artist: "Strong Minds", bpm: 130, url: "https://assets.mixkit.co/music/preview/mixkit-in-the-zone-132.mp3" },
+    { title: "Beast Mode", artist: "Muscle Music", bpm: 142, url: "https://assets.mixkit.co/music/preview/mixkit-driving-ambition-131.mp3" }
   ];
 
   const motivationalQuotes = [
@@ -28,16 +31,61 @@ const MindMuscle = () => {
   ];
 
   const togglePlay = () => {
-    setIsPlaying(!isPlaying);
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+        toast.info("Music paused");
+      } else {
+        audioRef.current.play().catch(err => {
+          console.error("Playback error:", err);
+          toast.error("Unable to play audio");
+        });
+        toast.success("Now playing: " + playlist[currentTrack].title);
+      }
+      setIsPlaying(!isPlaying);
+    }
   };
 
   const nextTrack = () => {
-    setCurrentTrack((prev) => (prev + 1) % playlist.length);
+    const newTrack = (currentTrack + 1) % playlist.length;
+    setCurrentTrack(newTrack);
+    setIsPlaying(false);
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.load();
+    }
+    toast.info(`Next: ${playlist[newTrack].title}`);
+  };
+
+  const selectTrack = (index: number) => {
+    if (index !== currentTrack) {
+      setCurrentTrack(index);
+      setIsPlaying(false);
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.load();
+      }
+      toast.info(`Selected: ${playlist[index].title}`);
+    }
+  };
+
+  const handleVolumeChange = (newVolume: number) => {
+    setVolume(newVolume);
+    if (audioRef.current) {
+      audioRef.current.volume = newVolume;
+    }
   };
 
   const toggleFocusMode = () => {
     setFocusMode(!focusMode);
   };
+
+  // Set initial volume
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -58,6 +106,13 @@ const MindMuscle = () => {
 
       {/* Content */}
       <div className="container mx-auto px-4 py-8">
+        {/* Hidden Audio Element */}
+        <audio 
+          ref={audioRef} 
+          src={playlist[currentTrack].url}
+          onEnded={nextTrack}
+        />
+        
         <div className="mb-6 animate-fade-in">
           <h1 className="text-3xl font-bold mb-2">Focus Your Mind, Fuel Your Body</h1>
           <p className="text-muted-foreground">Build mental focus and rhythm during your workout</p>
@@ -118,6 +173,8 @@ const MindMuscle = () => {
                 variant="outline"
                 size="icon"
                 className="rounded-full w-14 h-14"
+                onClick={() => handleVolumeChange(volume > 0 ? 0 : 0.7)}
+                title={`Volume: ${Math.round(volume * 100)}%`}
               >
                 <Volume2 className="w-6 h-6" />
               </Button>
@@ -173,11 +230,15 @@ const MindMuscle = () => {
                       ? "bg-primary/20 border border-primary/50"
                       : "bg-muted/30 hover:bg-muted/50"
                   }`}
-                  onClick={() => setCurrentTrack(i)}
+                  onClick={() => selectTrack(i)}
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 bg-primary/20 rounded flex items-center justify-center">
-                      <Music className="w-5 h-5 text-primary" />
+                      {i === currentTrack && isPlaying ? (
+                        <Volume2 className="w-5 h-5 text-primary animate-pulse" />
+                      ) : (
+                        <Music className="w-5 h-5 text-primary" />
+                      )}
                     </div>
                     <div>
                       <h4 className="font-semibold">{track.title}</h4>
