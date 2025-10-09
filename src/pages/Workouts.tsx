@@ -11,29 +11,32 @@ const Workouts = () => {
   const [savedWorkouts, setSavedWorkouts] = useState<string[]>([]);
 
   const workoutPlans = {
-    beginner: [
-      { name: "Push-ups", sets: 3, reps: 10, rest: "60s" },
-      { name: "Bodyweight Squats", sets: 3, reps: 15, rest: "60s" },
-      { name: "Plank", sets: 3, reps: "30s", rest: "45s" },
-      { name: "Lunges", sets: 3, reps: 12, rest: "60s" },
-      { name: "Mountain Climbers", sets: 3, reps: 20, rest: "60s" }
+    push: [
+      { name: "Barbell Bench Press", sets: 4, reps: 8, rest: "90s", muscle: "Chest" },
+      { name: "Incline Dumbbell Press", sets: 3, reps: 10, rest: "75s", muscle: "Upper Chest" },
+      { name: "Shoulder Press", sets: 4, reps: 8, rest: "90s", muscle: "Shoulders" },
+      { name: "Lateral Raises", sets: 3, reps: 12, rest: "60s", muscle: "Side Delts" },
+      { name: "Tricep Dips", sets: 3, reps: 10, rest: "75s", muscle: "Triceps" },
+      { name: "Overhead Tricep Extension", sets: 3, reps: 12, rest: "60s", muscle: "Triceps" },
+      { name: "Cable Flyes", sets: 3, reps: 15, rest: "60s", muscle: "Chest" }
     ],
-    intermediate: [
-      { name: "Bench Press", sets: 4, reps: 8, rest: "90s" },
-      { name: "Barbell Squats", sets: 4, reps: 10, rest: "90s" },
-      { name: "Pull-ups", sets: 3, reps: 8, rest: "90s" },
-      { name: "Deadlifts", sets: 4, reps: 6, rest: "120s" },
-      { name: "Shoulder Press", sets: 3, reps: 10, rest: "75s" },
-      { name: "Bent-over Rows", sets: 4, reps: 10, rest: "75s" }
+    pull: [
+      { name: "Deadlifts", sets: 4, reps: 6, rest: "120s", muscle: "Back/Hamstrings" },
+      { name: "Pull-ups", sets: 4, reps: 8, rest: "90s", muscle: "Lats" },
+      { name: "Barbell Rows", sets: 4, reps: 8, rest: "90s", muscle: "Mid Back" },
+      { name: "Face Pulls", sets: 3, reps: 15, rest: "60s", muscle: "Rear Delts" },
+      { name: "Barbell Curls", sets: 3, reps: 10, rest: "75s", muscle: "Biceps" },
+      { name: "Hammer Curls", sets: 3, reps: 12, rest: "60s", muscle: "Biceps" },
+      { name: "Shrugs", sets: 3, reps: 15, rest: "60s", muscle: "Traps" }
     ],
-    pro: [
-      { name: "Heavy Squats", sets: 5, reps: 5, rest: "180s" },
-      { name: "Heavy Deadlifts", sets: 5, reps: 5, rest: "180s" },
-      { name: "Weighted Pull-ups", sets: 4, reps: 6, rest: "120s" },
-      { name: "Incline Bench Press", sets: 4, reps: 8, rest: "120s" },
-      { name: "Front Squats", sets: 4, reps: 6, rest: "120s" },
-      { name: "Romanian Deadlifts", sets: 4, reps: 8, rest: "90s" },
-      { name: "Weighted Dips", sets: 4, reps: 8, rest: "90s" }
+    legs: [
+      { name: "Barbell Squats", sets: 4, reps: 8, rest: "120s", muscle: "Quads" },
+      { name: "Romanian Deadlifts", sets: 4, reps: 10, rest: "90s", muscle: "Hamstrings" },
+      { name: "Leg Press", sets: 4, reps: 12, rest: "90s", muscle: "Quads" },
+      { name: "Walking Lunges", sets: 3, reps: 12, rest: "75s", muscle: "Quads/Glutes" },
+      { name: "Leg Curls", sets: 3, reps: 12, rest: "60s", muscle: "Hamstrings" },
+      { name: "Calf Raises", sets: 4, reps: 15, rest: "60s", muscle: "Calves" },
+      { name: "Bulgarian Split Squats", sets: 3, reps: 10, rest: "75s", muscle: "Quads/Glutes" }
     ]
   };
 
@@ -66,28 +69,28 @@ const Workouts = () => {
       {/* Content */}
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6 animate-fade-in">
-          <h1 className="text-3xl font-bold mb-2">Choose Your Level</h1>
-          <p className="text-muted-foreground">Select a workout plan tailored to your fitness level</p>
+          <h1 className="text-3xl font-bold mb-2">Push / Pull / Legs Split</h1>
+          <p className="text-muted-foreground">Optimize your training with the classic PPL program</p>
         </div>
 
-        <Tabs defaultValue="beginner" className="w-full">
+        <Tabs defaultValue="push" className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-8">
-            <TabsTrigger value="beginner">Beginner</TabsTrigger>
-            <TabsTrigger value="intermediate">Intermediate</TabsTrigger>
-            <TabsTrigger value="pro">Pro</TabsTrigger>
+            <TabsTrigger value="push">Push Day</TabsTrigger>
+            <TabsTrigger value="pull">Pull Day</TabsTrigger>
+            <TabsTrigger value="legs">Leg Day</TabsTrigger>
           </TabsList>
 
-          {Object.entries(workoutPlans).map(([level, exercises]) => (
-            <TabsContent key={level} value={level} className="space-y-4 animate-fade-in">
+          {Object.entries(workoutPlans).map(([day, exercises]) => (
+            <TabsContent key={day} value={day} className="space-y-4 animate-fade-in">
               <Card className="border-primary/50 bg-card/50">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="text-2xl capitalize">{level} Program</CardTitle>
+                      <CardTitle className="text-2xl capitalize">{day} Day Program</CardTitle>
                       <CardDescription>
-                        {level === 'beginner' && 'Perfect for starting your fitness journey'}
-                        {level === 'intermediate' && 'Build strength and endurance'}
-                        {level === 'pro' && 'Advanced training for peak performance'}
+                        {day === 'push' && 'Chest, Shoulders & Triceps training'}
+                        {day === 'pull' && 'Back, Traps & Biceps training'}
+                        {day === 'legs' && 'Quads, Hamstrings, Glutes & Calves training'}
                       </CardDescription>
                     </div>
                     <Badge variant="outline" className="text-primary border-primary">
@@ -106,7 +109,8 @@ const Workouts = () => {
                     <CardContent className="py-4">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
-                          <h3 className="font-semibold text-lg mb-2">{exercise.name}</h3>
+                          <h3 className="font-semibold text-lg mb-1">{exercise.name}</h3>
+                          <Badge variant="outline" className="mb-2 text-xs">{exercise.muscle}</Badge>
                           <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                             <div className="flex items-center gap-1">
                               <Repeat className="w-4 h-4" />
@@ -131,10 +135,10 @@ const Workouts = () => {
                 variant="hero" 
                 size="lg" 
                 className="w-full"
-                onClick={() => saveWorkout(level)}
+                onClick={() => saveWorkout(day)}
               >
                 <Save className="w-5 h-5 mr-2" />
-                Save Workout Plan
+                Save {day.charAt(0).toUpperCase() + day.slice(1)} Day Plan
               </Button>
             </TabsContent>
           ))}
