@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,29 +7,71 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dumbbell, Mail, Lock } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const Auth = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [signupEmail, setSignupEmail] = useState("");
+  const [signupPassword, setSignupPassword] = useState("");
+  const [signupName, setSignupName] = useState("");
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        navigate("/dashboard");
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        navigate("/dashboard");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate login
-    setTimeout(() => {
+    
+    const { error } = await supabase.auth.signInWithPassword({
+      email: loginEmail,
+      password: loginPassword,
+    });
+
+    if (error) {
+      toast.error(error.message);
+    } else {
       toast.success("Welcome back!");
-      navigate("/dashboard");
-    }, 1000);
+    }
+    setIsLoading(false);
   };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate signup
-    setTimeout(() => {
+    
+    const { error } = await supabase.auth.signUp({
+      email: signupEmail,
+      password: signupPassword,
+      options: {
+        data: {
+          full_name: signupName,
+        },
+        emailRedirectTo: `${window.location.origin}/`,
+      },
+    });
+
+    if (error) {
+      toast.error(error.message);
+    } else {
       toast.success("Account created! Welcome to PRIME FLEX");
-      navigate("/dashboard");
-    }, 1000);
+    }
+    setIsLoading(false);
   };
 
   return (
@@ -66,6 +108,8 @@ const Auth = () => {
                         type="email" 
                         placeholder="your@email.com" 
                         className="pl-10"
+                        value={loginEmail}
+                        onChange={(e) => setLoginEmail(e.target.value)}
                         required 
                       />
                     </div>
@@ -79,6 +123,8 @@ const Auth = () => {
                         type="password" 
                         placeholder="••••••••" 
                         className="pl-10"
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
                         required 
                       />
                     </div>
@@ -96,7 +142,9 @@ const Auth = () => {
                     <Input 
                       id="signup-name" 
                       type="text" 
-                      placeholder="John Doe" 
+                      placeholder="John Doe"
+                      value={signupName}
+                      onChange={(e) => setSignupName(e.target.value)}
                       required 
                     />
                   </div>
@@ -109,6 +157,8 @@ const Auth = () => {
                         type="email" 
                         placeholder="your@email.com" 
                         className="pl-10"
+                        value={signupEmail}
+                        onChange={(e) => setSignupEmail(e.target.value)}
                         required 
                       />
                     </div>
@@ -122,18 +172,10 @@ const Auth = () => {
                         type="password" 
                         placeholder="••••••••" 
                         className="pl-10"
+                        value={signupPassword}
+                        onChange={(e) => setSignupPassword(e.target.value)}
                         required 
                       />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="age">Age</Label>
-                      <Input id="age" type="number" placeholder="25" required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="weight">Weight (kg)</Label>
-                      <Input id="weight" type="number" placeholder="70" required />
                     </div>
                   </div>
                   <Button type="submit" variant="hero" className="w-full" disabled={isLoading}>
@@ -143,14 +185,6 @@ const Auth = () => {
               </TabsContent>
             </Tabs>
 
-            <div className="mt-6 text-center">
-              <button 
-                onClick={() => navigate("/dashboard")}
-                className="text-sm text-muted-foreground hover:text-primary transition-colors"
-              >
-                Continue as guest →
-              </button>
-            </div>
           </CardContent>
         </Card>
       </div>

@@ -1,6 +1,7 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   Dumbbell, 
   Apple, 
@@ -15,10 +16,19 @@ import {
   Settings,
   LogOut,
   Move,
-  Camera
+  Camera,
+  Shield
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+  const { isAdmin, signOut } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/auth");
+  };
   const features = [
     { icon: Dumbbell, title: "Workout Plans", desc: "Beginner to Pro programs", link: "/workouts", color: "text-primary" },
     { icon: Apple, title: "Diet Plans", desc: "Personalized nutrition", link: "/diet", color: "text-green-500" },
@@ -41,18 +51,30 @@ const Dashboard = () => {
           <div className="flex items-center gap-3">
             <Dumbbell className="w-7 h-7 text-primary" />
             <span className="text-xl font-bold text-gradient-gold">PRIME FLEX</span>
+            {isAdmin && (
+              <Badge variant="secondary" className="ml-2">
+                <Shield className="w-3 h-3 mr-1" />
+                Admin
+              </Badge>
+            )}
           </div>
           <div className="flex items-center gap-2">
+            {isAdmin && (
+              <Link to="/admin">
+                <Button variant="outline" size="sm">
+                  <Shield className="w-4 h-4 mr-2" />
+                  Admin Panel
+                </Button>
+              </Link>
+            )}
             <Link to="/settings">
               <Button variant="ghost" size="icon">
                 <Settings className="w-5 h-5" />
               </Button>
             </Link>
-            <Link to="/">
-              <Button variant="ghost" size="icon">
-                <LogOut className="w-5 h-5" />
-              </Button>
-            </Link>
+            <Button variant="ghost" size="icon" onClick={handleLogout}>
+              <LogOut className="w-5 h-5" />
+            </Button>
           </div>
         </div>
       </header>
