@@ -52,7 +52,14 @@ const App = () => (
             <Route path="/admin" element={<AdminPanel />} />
             <Route path="/feedback" element={<Feedback />} />
             <Route path="/community" element={<Community />} />
+            <Route path="/admin" element={<AdminPanel />} />
+            <Route path="/feedback" element={<Feedback />} />
+             <Route path="/community" element={<Community />} />
+            <Route path="/fatloss" element={<FatLoss />} />
+
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+             export default App;
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
