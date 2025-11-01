@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, TrendingUp, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, TrendingUp, Plus, Trash2, Download, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 interface WorkoutRecord {
   id: string;
@@ -16,40 +19,102 @@ interface WorkoutRecord {
 }
 
 const Strength = () => {
-  const [records, setRecords] = useState<WorkoutRecord[]>([
-    { id: "1", exercise: "Bench Press", weight: 60, reps: 10, date: "2025-01-15" },
-    { id: "2", exercise: "Squat", weight: 80, reps: 8, date: "2025-01-15" },
-    { id: "3", exercise: "Deadlift", weight: 100, reps: 6, date: "2025-01-14" }
-  ]);
-
+  const { user } = useAuth();
+  const [records, setRecords] = useState<WorkoutRecord[]>([]);
   const [exercise, setExercise] = useState("");
   const [weight, setWeight] = useState("");
   const [reps, setReps] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  const addRecord = () => {
+  useEffect(() => {
+    if (user) {
+      fetchRecords();
+    }
+  }, [user]);
+
+  const fetchRecords = async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('strength_progress')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (data) {
+      const formattedRecords: WorkoutRecord[] = data.map(item => ({
+        id: item.id,
+        exercise: item.exercise_name,
+        weight: parseFloat(item.weight.toString()),
+        reps: item.reps,
+        date: item.recorded_date
+      }));
+      setRecords(formattedRecords);
+    }
+    setLoading(false);
+  };
+
+  const addRecord = async () => {
+    if (!user) {
+      toast.error("Please log in to track progress");
+      return;
+    }
+
     if (!exercise || !weight || !reps) {
       toast.error("Please fill all fields");
       return;
     }
 
-    const newRecord: WorkoutRecord = {
-      id: Date.now().toString(),
-      exercise,
-      weight: parseFloat(weight),
-      reps: parseInt(reps),
-      date: new Date().toISOString().split('T')[0]
-    };
+    const { error } = await supabase
+      .from('strength_progress')
+      .insert({
+        user_id: user.id,
+        exercise_name: exercise,
+        weight: parseFloat(weight),
+        reps: parseInt(reps),
+        recorded_date: new Date().toISOString().split('T')[0]
+      });
 
-    setRecords([newRecord, ...records]);
-    setExercise("");
-    setWeight("");
-    setReps("");
-    toast.success("Workout logged successfully!");
+    if (error) {
+      toast.error("Failed to save workout");
+    } else {
+      setExercise("");
+      setWeight("");
+      setReps("");
+      toast.success("Workout logged successfully!");
+      fetchRecords();
+    }
   };
 
-  const deleteRecord = (id: string) => {
-    setRecords(records.filter(r => r.id !== id));
-    toast.info("Record deleted");
+  const deleteRecord = async (id: string) => {
+    if (!user) return;
+
+    const { error } = await supabase
+      .from('strength_progress')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      toast.error("Failed to delete record");
+    } else {
+      toast.info("Record deleted");
+      fetchRecords();
+    }
+  };
+
+  const exportToCSV = () => {
+    const csvContent = [
+      "Exercise,Weight (kg),Reps,Date",
+      ...records.map(r => `${r.exercise},${r.weight},${r.reps},${r.date}`)
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `strength-progress-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    toast.success("Progress exported!");
   };
 
   // Calculate stats
@@ -67,6 +132,36 @@ const Strength = () => {
     acc[r.exercise].sessions += 1;
     return acc;
   }, {} as Record<string, { totalWeight: number; totalReps: number; sessions: number }>);
+
+  // Prepare graph data (last 7 records or weekly average)
+  const graphData = records
+    .slice(0, 14)
+    .reverse()
+    .map(record => ({
+      date: new Date(record.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      weight: record.weight,
+      totalVolume: record.weight * record.reps,
+      exercise: record.exercise
+    }));
+
+  // Calculate weekly progress
+  const lastWeekTotal = records
+    .filter(r => {
+      const daysDiff = (new Date().getTime() - new Date(r.date).getTime()) / (1000 * 60 * 60 * 24);
+      return daysDiff <= 7;
+    })
+    .reduce((sum, r) => sum + (r.weight * r.reps), 0);
+
+  const prevWeekTotal = records
+    .filter(r => {
+      const daysDiff = (new Date().getTime() - new Date(r.date).getTime()) / (1000 * 60 * 60 * 24);
+      return daysDiff > 7 && daysDiff <= 14;
+    })
+    .reduce((sum, r) => sum + (r.weight * r.reps), 0);
+
+  const weeklyImprovement = prevWeekTotal > 0 
+    ? Math.round(((lastWeekTotal - prevWeekTotal) / prevWeekTotal) * 100)
+    : 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -93,7 +188,7 @@ const Strength = () => {
         </div>
 
         {/* Stats Overview */}
-        <div className="grid md:grid-cols-3 gap-4 mb-8">
+        <div className="grid md:grid-cols-4 gap-4 mb-8">
           <Card className="bg-gradient-to-br from-blue-500/10 to-transparent border-blue-500/30">
             <CardContent className="pt-6">
               <div className="text-3xl font-bold text-blue-500">{totalWeight.toLocaleString()}</div>
@@ -112,7 +207,90 @@ const Strength = () => {
               <div className="text-sm text-muted-foreground">Total Sessions</div>
             </CardContent>
           </Card>
+          <Card className="bg-gradient-to-br from-purple-500/10 to-transparent border-purple-500/30">
+            <CardContent className="pt-6">
+              <div className="text-3xl font-bold text-purple-500">
+                {weeklyImprovement > 0 ? '+' : ''}{weeklyImprovement}%
+              </div>
+              <div className="text-sm text-muted-foreground">Weekly Progress</div>
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Weekly Summary */}
+        {weeklyImprovement !== 0 && (
+          <Card className="mb-8 border-primary/50 bg-gradient-to-r from-primary/10 to-primary/5">
+            <CardContent className="py-6 text-center">
+              <p className="text-lg">
+                {weeklyImprovement > 0 ? '📈' : '📉'} You {weeklyImprovement > 0 ? 'improved' : 'decreased'} by <strong>{Math.abs(weeklyImprovement)}%</strong> this week!
+                {weeklyImprovement > 0 && " Keep pushing! 💪"}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Progress Graph */}
+        {graphData.length > 0 && (
+          <Card className="mb-8 border-border">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-primary" />
+                    Progress Graph
+                  </CardTitle>
+                  <CardDescription>Your recent training volume over time</CardDescription>
+                </div>
+                <Button onClick={exportToCSV} variant="outline" size="sm" className="gap-2">
+                  <Download className="w-4 h-4" />
+                  Export CSV
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={graphData}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis 
+                      dataKey="date" 
+                      className="text-xs"
+                      tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                    />
+                    <YAxis 
+                      className="text-xs"
+                      tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }}
+                    />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="totalVolume" 
+                      stroke="hsl(var(--primary))" 
+                      strokeWidth={2}
+                      name="Total Volume (kg)"
+                      dot={{ fill: 'hsl(var(--primary))', r: 4 }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="weight" 
+                      stroke="hsl(var(--chart-2))" 
+                      strokeWidth={2}
+                      name="Weight (kg)"
+                      dot={{ fill: 'hsl(var(--chart-2))', r: 4 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Add Record Form */}
         <Card className="mb-8 border-primary/50 bg-card/50">

@@ -23,6 +23,8 @@ import FormDetector from "./pages/FormDetector";
 import AdminPanel from "./pages/AdminPanel";
 import Feedback from "./pages/Feedback";
 import Community from "./pages/Community";
+import HomeWorkout from "./pages/HomeWorkout";
+import Calisthenics from "./pages/Calisthenics";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +51,8 @@ const App = () => (
             <Route path="/settings" element={<Settings />} />
             <Route path="/height-growth" element={<HeightGrowth />} />
             <Route path="/form-detector" element={<FormDetector />} />
+            <Route path="/home-workout" element={<HomeWorkout />} />
+            <Route path="/calisthenics" element={<Calisthenics />} />
             <Route path="/admin" element={<AdminPanel />} />
             <Route path="/feedback" element={<Feedback />} />
             <Route path="/community" element={<Community />} />

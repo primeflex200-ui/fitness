@@ -1,11 +1,103 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Settings as SettingsIcon, User, Bell, Moon, Info } from "lucide-react";
+import { ArrowLeft, Settings as SettingsIcon, User, Bell, Moon, Info, Save } from "lucide-react";
+import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 const Settings = () => {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [profile, setProfile] = useState({
+    full_name: "",
+    email: "",
+    age: "",
+    gender: "",
+    height: "",
+    weight: "",
+    fitness_goal: ""
+  });
+
+  useEffect(() => {
+    if (user) {
+      fetchProfile();
+    }
+  }, [user]);
+
+  const fetchProfile = async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (data) {
+      setProfile({
+        full_name: data.full_name || "",
+        email: data.email || "",
+        age: data.age?.toString() || "",
+        gender: data.gender || "",
+        height: data.height?.toString() || "",
+        weight: data.weight?.toString() || "",
+        fitness_goal: data.fitness_goal || ""
+      });
+    }
+    setLoading(false);
+  };
+
+  const handleSave = async () => {
+    if (!user) return;
+
+    const updateData: any = {
+      full_name: profile.full_name,
+      age: profile.age ? parseInt(profile.age) : null,
+      gender: profile.gender || null,
+      height: profile.height ? parseFloat(profile.height) : null,
+      weight: profile.weight ? parseFloat(profile.weight) : null,
+      fitness_goal: profile.fitness_goal || null
+    };
+
+    const { error } = await supabase
+      .from('profiles')
+      .update(updateData)
+      .eq('id', user.id);
+
+    if (error) {
+      toast.error("Failed to update profile");
+    } else {
+      toast.success("Profile updated successfully!");
+      setEditing(false);
+      fetchProfile();
+    }
+  };
+
+  const getFitnessGoalDisplay = (goal: string) => {
+    const goals: Record<string, string> = {
+      'fat_loss': 'Fat Loss',
+      'muscle_gain': 'Muscle Gain',
+      'maintain': 'Maintain Fitness',
+      'athletic': 'Athletic Performance'
+    };
+    return goals[goal] || 'Not Set';
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -30,37 +122,167 @@ const Settings = () => {
           <p className="text-muted-foreground">Manage your preferences</p>
         </div>
 
+        {/* Profile Summary Card */}
+        {profile.full_name && profile.fitness_goal && (
+          <Card className="mb-6 border-primary/50 bg-gradient-to-r from-primary/10 to-primary/5">
+            <CardContent className="py-6">
+              <p className="text-lg">
+                <strong>Hey, {profile.full_name}!</strong> You're working toward {getFitnessGoalDisplay(profile.fitness_goal)}. 
+                Stay consistent 💪
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Profile */}
         <Card className="mb-6 border-border bg-card/50">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="w-5 h-5 text-primary" />
-              Profile Information
-            </CardTitle>
-            <CardDescription>Your personal details</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="w-5 h-5 text-primary" />
+                  Profile Information
+                </CardTitle>
+                <CardDescription>Your personal details</CardDescription>
+              </div>
+              {!editing && (
+                <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+                  Edit Profile
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <Label className="text-muted-foreground">Name</Label>
-              <p className="text-lg font-semibold">John Doe</p>
-            </div>
-            <div>
-              <Label className="text-muted-foreground">Email</Label>
-              <p className="text-lg font-semibold">john@example.com</p>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-muted-foreground">Age</Label>
-                <p className="text-lg font-semibold">25 years</p>
-              </div>
-              <div>
-                <Label className="text-muted-foreground">Weight</Label>
-                <p className="text-lg font-semibold">70 kg</p>
-              </div>
-            </div>
-            <Button variant="outline" className="w-full">
-              Edit Profile
-            </Button>
+            {editing ? (
+              <>
+                <div>
+                  <Label htmlFor="full_name">Full Name</Label>
+                  <Input
+                    id="full_name"
+                    value={profile.full_name}
+                    onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
+                    placeholder="Enter your name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="email" className="text-muted-foreground">Email (cannot be changed)</Label>
+                  <Input
+                    id="email"
+                    value={profile.email}
+                    disabled
+                    className="opacity-60"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="age">Age</Label>
+                    <Input
+                      id="age"
+                      type="number"
+                      value={profile.age}
+                      onChange={(e) => setProfile({ ...profile, age: e.target.value })}
+                      placeholder="25"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="gender">Gender</Label>
+                    <Select value={profile.gender} onValueChange={(value) => setProfile({ ...profile, gender: value })}>
+                      <SelectTrigger id="gender">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="height">Height (cm)</Label>
+                    <Input
+                      id="height"
+                      type="number"
+                      value={profile.height}
+                      onChange={(e) => setProfile({ ...profile, height: e.target.value })}
+                      placeholder="170"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="weight">Weight (kg)</Label>
+                    <Input
+                      id="weight"
+                      type="number"
+                      value={profile.weight}
+                      onChange={(e) => setProfile({ ...profile, weight: e.target.value })}
+                      placeholder="70"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="fitness_goal">Fitness Goal</Label>
+                  <Select value={profile.fitness_goal} onValueChange={(value) => setProfile({ ...profile, fitness_goal: value })}>
+                    <SelectTrigger id="fitness_goal">
+                      <SelectValue placeholder="Select your goal" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="fat_loss">Fat Loss</SelectItem>
+                      <SelectItem value="muscle_gain">Muscle Gain</SelectItem>
+                      <SelectItem value="maintain">Maintain Fitness</SelectItem>
+                      <SelectItem value="athletic">Athletic Performance</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={handleSave} className="flex-1 gap-2">
+                    <Save className="w-4 h-4" />
+                    Save Changes
+                  </Button>
+                  <Button variant="outline" onClick={() => {
+                    setEditing(false);
+                    fetchProfile();
+                  }}>
+                    Cancel
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div>
+                  <Label className="text-muted-foreground">Name</Label>
+                  <p className="text-lg font-semibold">{profile.full_name || "Not set"}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Email</Label>
+                  <p className="text-lg font-semibold">{profile.email}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-muted-foreground">Age</Label>
+                    <p className="text-lg font-semibold">{profile.age ? `${profile.age} years` : "Not set"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Gender</Label>
+                    <p className="text-lg font-semibold capitalize">{profile.gender || "Not set"}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-muted-foreground">Height</Label>
+                    <p className="text-lg font-semibold">{profile.height ? `${profile.height} cm` : "Not set"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Weight</Label>
+                    <p className="text-lg font-semibold">{profile.weight ? `${profile.weight} kg` : "Not set"}</p>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Fitness Goal</Label>
+                  <p className="text-lg font-semibold">{profile.fitness_goal ? getFitnessGoalDisplay(profile.fitness_goal) : "Not set"}</p>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 

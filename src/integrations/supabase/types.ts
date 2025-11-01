@@ -38,6 +38,36 @@ export type Database = {
         }
         Relationships: []
       }
+      diet_completions: {
+        Row: {
+          completed: boolean
+          created_at: string
+          diet_plan: string
+          id: string
+          meal_date: string
+          meal_type: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          diet_plan: string
+          id?: string
+          meal_date?: string
+          meal_type: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          diet_plan?: string
+          id?: string
+          meal_date?: string
+          meal_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       diet_plans: {
         Row: {
           category: string
@@ -115,22 +145,67 @@ export type Database = {
       }
       profiles: {
         Row: {
+          age: number | null
           created_at: string | null
           email: string
+          fitness_goal: string | null
           full_name: string | null
+          gender: string | null
+          height: number | null
           id: string
+          weight: number | null
         }
         Insert: {
+          age?: number | null
           created_at?: string | null
           email: string
+          fitness_goal?: string | null
           full_name?: string | null
+          gender?: string | null
+          height?: number | null
           id: string
+          weight?: number | null
         }
         Update: {
+          age?: number | null
           created_at?: string | null
           email?: string
+          fitness_goal?: string | null
           full_name?: string | null
+          gender?: string | null
+          height?: number | null
           id?: string
+          weight?: number | null
+        }
+        Relationships: []
+      }
+      strength_progress: {
+        Row: {
+          created_at: string
+          exercise_name: string
+          id: string
+          recorded_date: string
+          reps: number
+          user_id: string
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          exercise_name: string
+          id?: string
+          recorded_date?: string
+          reps: number
+          user_id: string
+          weight: number
+        }
+        Update: {
+          created_at?: string
+          exercise_name?: string
+          id?: string
+          recorded_date?: string
+          reps?: number
+          user_id?: string
+          weight?: number
         }
         Relationships: []
       }
@@ -227,6 +302,36 @@ export type Database = {
           updated_at?: string
           user_id?: string
           workouts_completed?: number
+        }
+        Relationships: []
+      }
+      workout_completions: {
+        Row: {
+          completed: boolean
+          created_at: string
+          exercise_name: string
+          id: string
+          user_id: string
+          workout_date: string
+          workout_type: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          exercise_name: string
+          id?: string
+          user_id: string
+          workout_date?: string
+          workout_type: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          exercise_name?: string
+          id?: string
+          user_id?: string
+          workout_date?: string
+          workout_type?: string
         }
         Relationships: []
       }

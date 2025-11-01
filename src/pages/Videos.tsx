@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Video, Play, Heart, MessageCircle, Search, Star, Upload } from "lucide-react";
+import { ArrowLeft, Video, Play, Heart, MessageCircle, Search, Star } from "lucide-react";
 import { toast } from "sonner";
 
 const Videos = () => {
@@ -159,7 +159,7 @@ const Videos = () => {
           </CardContent>
         </Card>
 
-        {/* Search and Upload */}
+        {/* Search and Feedback */}
         <div className="mb-6 flex gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
@@ -170,14 +170,15 @@ const Videos = () => {
               className="pl-10"
             />
           </div>
-          <Button 
-            variant="default" 
-            className="gap-2"
-            onClick={() => toast.info("Video upload feature coming soon! 🎬")}
-          >
-            <Upload className="h-4 w-4" />
-            Upload Video
-          </Button>
+          <Link to="/feedback">
+            <Button 
+              variant="default" 
+              className="gap-2"
+            >
+              <MessageCircle className="h-4 w-4" />
+              Send Feedback
+            </Button>
+          </Link>
         </div>
 
         {/* Video Grid */}

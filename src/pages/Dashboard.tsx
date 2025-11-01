@@ -21,7 +21,8 @@ import {
   Camera,
   Shield,
   MessageSquare,
-  Send
+  Send,
+  Zap
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -75,6 +76,8 @@ const Dashboard = () => {
     { icon: Video, title: "Trainer Videos", desc: "Expert guidance", link: "/videos", color: "text-orange-500" },
     { icon: Pill, title: "Nutrition Guide", desc: "Supplements & macros", link: "/nutrition", color: "text-yellow-500" },
     { icon: Move, title: "Height Growth", desc: "Growth tips & exercises", link: "/height-growth", color: "text-emerald-500" },
+    { icon: Zap, title: "Home Workouts", desc: "No equipment needed", link: "/home-workout", color: "text-amber-500" },
+    { icon: Brain, title: "Calisthenics", desc: "Bodyweight mastery", link: "/calisthenics", color: "text-violet-500" },
     { icon: Camera, title: "Form Detector", desc: "AI form analysis (Soon)", link: "/form-detector", color: "text-pink-500" },
     { icon: MessageSquare, title: "Community", desc: "Chat with members", link: "/community", color: "text-indigo-500" },
     { icon: Send, title: "Feedback", desc: "Share your thoughts", link: "/feedback", color: "text-teal-500" },
@@ -192,6 +195,21 @@ const Dashboard = () => {
                   Start Training
                 </Button>
               </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* Disclaimer Footer */}
+      <section className="py-8 px-4 bg-muted/30">
+        <div className="container mx-auto">
+          <Card className="border-primary/30 bg-card/50">
+            <CardContent className="py-6 text-center">
+              <p className="text-sm text-muted-foreground">
+                <strong>Important:</strong> Access features based on your fitness goals. 
+                Consult professionals before starting any new diet or training plan. 
+                Results may vary based on individual commitment and consistency.
+              </p>
             </CardContent>
           </Card>
         </div>
