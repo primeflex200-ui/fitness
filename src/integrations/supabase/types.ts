@@ -147,6 +147,7 @@ export type Database = {
         Row: {
           age: number | null
           created_at: string | null
+          diet_type: string | null
           email: string
           fitness_goal: string | null
           full_name: string | null
@@ -158,6 +159,7 @@ export type Database = {
         Insert: {
           age?: number | null
           created_at?: string | null
+          diet_type?: string | null
           email: string
           fitness_goal?: string | null
           full_name?: string | null
@@ -169,6 +171,7 @@ export type Database = {
         Update: {
           age?: number | null
           created_at?: string | null
+          diet_type?: string | null
           email?: string
           fitness_goal?: string | null
           full_name?: string | null

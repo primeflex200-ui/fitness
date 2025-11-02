@@ -24,7 +24,8 @@ const profileSchema = z.object({
     message: "Weight must be between 20-500 kg"
   }).optional(),
   gender: z.enum(["male", "female", "other", ""]).optional(),
-  fitness_goal: z.enum(["fat_loss", "muscle_gain", "maintain", "athletic", ""]).optional()
+  fitness_goal: z.enum(["fat_loss", "muscle_gain", "maintain", "athletic", ""]).optional(),
+  diet_type: z.enum(["veg", "non_veg", ""]).optional()
 });
 
 const Settings = () => {
@@ -38,7 +39,8 @@ const Settings = () => {
     gender: "",
     height: "",
     weight: "",
-    fitness_goal: ""
+    fitness_goal: "",
+    diet_type: ""
   });
 
   useEffect(() => {
@@ -64,7 +66,8 @@ const Settings = () => {
         gender: data.gender || "",
         height: data.height?.toString() || "",
         weight: data.weight?.toString() || "",
-        fitness_goal: data.fitness_goal || ""
+        fitness_goal: data.fitness_goal || "",
+        diet_type: data.diet_type || ""
       });
     }
     setLoading(false);
@@ -80,7 +83,8 @@ const Settings = () => {
       height: profile.height,
       weight: profile.weight,
       gender: profile.gender,
-      fitness_goal: profile.fitness_goal
+      fitness_goal: profile.fitness_goal,
+      diet_type: profile.diet_type
     });
 
     if (!validation.success) {
@@ -94,7 +98,8 @@ const Settings = () => {
       gender: profile.gender || null,
       height: profile.height ? parseFloat(profile.height) : null,
       weight: profile.weight ? parseFloat(profile.weight) : null,
-      fitness_goal: profile.fitness_goal || null
+      fitness_goal: profile.fitness_goal || null,
+      diet_type: profile.diet_type || null
     };
 
     const { error } = await supabase
@@ -265,6 +270,18 @@ const Settings = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                <div>
+                  <Label htmlFor="diet_type">Diet Type</Label>
+                  <Select value={profile.diet_type} onValueChange={(value) => setProfile({ ...profile, diet_type: value })}>
+                    <SelectTrigger id="diet_type">
+                      <SelectValue placeholder="Select diet type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="veg">Vegetarian</SelectItem>
+                      <SelectItem value="non_veg">Non-Vegetarian</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="flex gap-2">
                   <Button onClick={handleSave} className="flex-1 gap-2">
                     <Save className="w-4 h-4" />
@@ -311,6 +328,10 @@ const Settings = () => {
                 <div>
                   <Label className="text-muted-foreground">Fitness Goal</Label>
                   <p className="text-lg font-semibold">{profile.fitness_goal ? getFitnessGoalDisplay(profile.fitness_goal) : "Not set"}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Diet Type</Label>
+                  <p className="text-lg font-semibold capitalize">{profile.diet_type === "veg" ? "Vegetarian" : profile.diet_type === "non_veg" ? "Non-Vegetarian" : "Not set"}</p>
                 </div>
               </>
             )}
