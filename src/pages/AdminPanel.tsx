@@ -81,23 +81,33 @@ const AdminPanel = () => {
         description: "Failed to load feedback",
         variant: "destructive",
       });
-    } else {
-      // Fetch user emails separately
-      const feedbackWithProfiles = await Promise.all(
-        (data || []).map(async (item) => {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("email")
-            .eq("id", item.user_id)
-            .single();
-          return {
-            ...item,
-            profiles: profile || { email: "Unknown" },
-          };
-        })
-      );
-      setFeedback(feedbackWithProfiles);
+      return;
     }
+
+    if (!data || data.length === 0) {
+      setFeedback([]);
+      return;
+    }
+
+    // Get unique user IDs
+    const userIds = [...new Set(data.map(item => item.user_id))];
+    
+    // Fetch all profiles in a single query
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, email")
+      .in("id", userIds);
+
+    // Create a map for quick lookup
+    const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+
+    // Combine feedback with profiles
+    const feedbackWithProfiles = data.map(item => ({
+      ...item,
+      profiles: profileMap.get(item.user_id) || { email: "Unknown" }
+    }));
+
+    setFeedback(feedbackWithProfiles);
   };
 
   const handleVideoUpload = async () => {
