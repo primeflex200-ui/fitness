@@ -274,7 +274,7 @@ const Settings = () => {
                   <Label htmlFor="diet_type">Diet Type</Label>
                   <Select value={profile.diet_type} onValueChange={(value) => setProfile({ ...profile, diet_type: value })}>
                     <SelectTrigger id="diet_type">
-                      <SelectValue placeholder="Select diet type" />
+                      <SelectValue placeholder="Select diet preference" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="veg">Vegetarian</SelectItem>
@@ -331,7 +331,7 @@ const Settings = () => {
                 </div>
                 <div>
                   <Label className="text-muted-foreground">Diet Type</Label>
-                  <p className="text-lg font-semibold capitalize">{profile.diet_type === "veg" ? "Vegetarian" : profile.diet_type === "non_veg" ? "Non-Vegetarian" : "Not set"}</p>
+                  <p className="text-lg font-semibold capitalize">{profile.diet_type ? (profile.diet_type === "veg" ? "Vegetarian" : "Non-Vegetarian") : "Not set"}</p>
                 </div>
               </>
             )}

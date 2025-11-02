@@ -3,10 +3,10 @@ import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dumbbell, Mail, Lock, User } from "lucide-react";
+import { Dumbbell, Mail, Lock, User as UserIcon, Activity } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
@@ -21,19 +21,19 @@ const passwordSchema = z.string()
 const signupSchema = z.object({
   email: z.string().email("Invalid email address").max(255),
   password: passwordSchema,
-  full_name: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
+  full_name: z.string().trim().min(1, "Name is required").max(100),
   age: z.string().refine((val) => !isNaN(parseInt(val)) && parseInt(val) >= 13 && parseInt(val) <= 120, {
     message: "Age must be between 13 and 120"
   }),
-  gender: z.enum(["male", "female", "other"], { errorMap: () => ({ message: "Please select a gender" }) }),
-  weight: z.string().refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) >= 20 && parseFloat(val) <= 500, {
-    message: "Weight must be between 20-500 kg"
-  }),
+  gender: z.enum(["male", "female", "other"], { required_error: "Please select gender" }),
   height: z.string().refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) >= 50 && parseFloat(val) <= 300, {
     message: "Height must be between 50-300 cm"
   }),
-  fitness_goal: z.enum(["fat_loss", "muscle_gain", "maintain"], { errorMap: () => ({ message: "Please select a fitness goal" }) }),
-  diet_type: z.enum(["veg", "non_veg"], { errorMap: () => ({ message: "Please select your diet type" }) })
+  weight: z.string().refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) >= 20 && parseFloat(val) <= 500, {
+    message: "Weight must be between 20-500 kg"
+  }),
+  fitness_goal: z.enum(["fat_loss", "muscle_gain", "maintain", "athletic"], { required_error: "Please select fitness goal" }),
+  diet_type: z.enum(["veg", "non_veg"], { required_error: "Please select diet type" })
 });
 
 const Auth = () => {
@@ -41,15 +41,17 @@ const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
-  const [signupEmail, setSignupEmail] = useState("");
-  const [signupPassword, setSignupPassword] = useState("");
-  const [signupName, setSignupName] = useState("");
-  const [signupAge, setSignupAge] = useState("");
-  const [signupGender, setSignupGender] = useState("");
-  const [signupWeight, setSignupWeight] = useState("");
-  const [signupHeight, setSignupHeight] = useState("");
-  const [signupGoal, setSignupGoal] = useState("");
-  const [signupDiet, setSignupDiet] = useState("");
+  const [signupData, setSignupData] = useState({
+    email: "",
+    password: "",
+    full_name: "",
+    age: "",
+    gender: "",
+    height: "",
+    weight: "",
+    fitness_goal: "",
+    diet_type: ""
+  });
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -89,17 +91,7 @@ const Auth = () => {
     setIsLoading(true);
     
     // Validate inputs
-    const result = signupSchema.safeParse({
-      email: signupEmail,
-      password: signupPassword,
-      full_name: signupName,
-      age: signupAge,
-      gender: signupGender,
-      weight: signupWeight,
-      height: signupHeight,
-      fitness_goal: signupGoal,
-      diet_type: signupDiet
-    });
+    const result = signupSchema.safeParse(signupData);
 
     if (!result.success) {
       toast.error(result.error.errors[0].message);
@@ -107,52 +99,49 @@ const Auth = () => {
       return;
     }
     
-    // Sign up the user
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: signupEmail,
-      password: signupPassword,
+    const { error: signupError, data } = await supabase.auth.signUp({
+      email: signupData.email,
+      password: signupData.password,
       options: {
         data: {
-          full_name: signupName,
+          full_name: signupData.full_name,
         },
         emailRedirectTo: `${window.location.origin}/`,
       },
     });
 
-    if (authError) {
-      toast.error(authError.message);
+    if (signupError) {
+      toast.error(signupError.message);
       setIsLoading(false);
       return;
     }
 
-    // Update profile with additional details
-    if (authData.user) {
+    // Update profile with additional data
+    if (data.user) {
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
-          age: parseInt(signupAge),
-          gender: signupGender,
-          weight: parseFloat(signupWeight),
-          height: parseFloat(signupHeight),
-          fitness_goal: signupGoal,
-          diet_type: signupDiet
+          age: parseInt(signupData.age),
+          gender: signupData.gender,
+          height: parseFloat(signupData.height),
+          weight: parseFloat(signupData.weight),
+          fitness_goal: signupData.fitness_goal,
+          diet_type: signupData.diet_type
         })
-        .eq('id', authData.user.id);
+        .eq('id', data.user.id);
 
       if (profileError) {
-        console.error('Profile update error:', profileError);
-        toast.error("Account created but profile update failed. Please update in Settings.");
-      } else {
-        toast.success("Account created! Welcome to PRIME FLEX");
+        console.error("Profile update error:", profileError);
       }
     }
-    
+
+    toast.success("Account created! Welcome to PRIME FLEX");
     setIsLoading(false);
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-      <div className="w-full max-w-md animate-fade-in">
+      <div className="w-full max-w-2xl animate-fade-in">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 mb-4">
             <Dumbbell className="w-8 h-8 text-primary" />
@@ -212,38 +201,73 @@ const Auth = () => {
               </TabsContent>
 
               <TabsContent value="signup">
-                <form onSubmit={handleSignup} className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                <form onSubmit={handleSignup} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signup-name">Full Name</Label>
+                    <Label htmlFor="signup-name">Full Name *</Label>
                     <div className="relative">
-                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <UserIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input 
                         id="signup-name" 
                         type="text" 
                         placeholder="John Doe"
                         className="pl-10"
-                        value={signupName}
-                        onChange={(e) => setSignupName(e.target.value)}
+                        value={signupData.full_name}
+                        onChange={(e) => setSignupData({...signupData, full_name: e.target.value})}
+                        required 
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email">Email *</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="signup-email" 
+                        type="email" 
+                        placeholder="your@email.com" 
+                        className="pl-10"
+                        value={signupData.email}
+                        onChange={(e) => setSignupData({...signupData, email: e.target.value})}
                         required 
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password">Password *</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="signup-password" 
+                        type="password" 
+                        placeholder="••••••••" 
+                        className="pl-10"
+                        value={signupData.password}
+                        onChange={(e) => setSignupData({...signupData, password: e.target.value})}
+                        required 
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Must be 8+ characters with uppercase, lowercase, number, and special character
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="signup-age">Age</Label>
+                      <Label htmlFor="signup-age">Age *</Label>
                       <Input 
                         id="signup-age" 
                         type="number" 
                         placeholder="25"
-                        value={signupAge}
-                        onChange={(e) => setSignupAge(e.target.value)}
+                        value={signupData.age}
+                        onChange={(e) => setSignupData({...signupData, age: e.target.value})}
                         required 
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="signup-gender">Gender</Label>
-                      <Select value={signupGender} onValueChange={setSignupGender} required>
+                      <Label htmlFor="signup-gender">Gender *</Label>
+                      <Select value={signupData.gender} onValueChange={(value) => setSignupData({...signupData, gender: value})}>
                         <SelectTrigger id="signup-gender">
                           <SelectValue placeholder="Select" />
                         </SelectTrigger>
@@ -256,36 +280,34 @@ const Auth = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="signup-weight">Weight (kg)</Label>
+                      <Label htmlFor="signup-height">Height (cm) *</Label>
                       <Input 
-                        id="signup-weight" 
+                        id="signup-height" 
                         type="number" 
-                        step="0.1"
-                        placeholder="70"
-                        value={signupWeight}
-                        onChange={(e) => setSignupWeight(e.target.value)}
+                        placeholder="170"
+                        value={signupData.height}
+                        onChange={(e) => setSignupData({...signupData, height: e.target.value})}
                         required 
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="signup-height">Height (cm)</Label>
+                      <Label htmlFor="signup-weight">Weight (kg) *</Label>
                       <Input 
-                        id="signup-height" 
+                        id="signup-weight" 
                         type="number" 
-                        step="0.1"
-                        placeholder="170"
-                        value={signupHeight}
-                        onChange={(e) => setSignupHeight(e.target.value)}
+                        placeholder="70"
+                        value={signupData.weight}
+                        onChange={(e) => setSignupData({...signupData, weight: e.target.value})}
                         required 
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="signup-goal">Fitness Goal</Label>
-                    <Select value={signupGoal} onValueChange={setSignupGoal} required>
+                    <Label htmlFor="signup-goal">Fitness Goal *</Label>
+                    <Select value={signupData.fitness_goal} onValueChange={(value) => setSignupData({...signupData, fitness_goal: value})}>
                       <SelectTrigger id="signup-goal">
                         <SelectValue placeholder="Select your goal" />
                       </SelectTrigger>
@@ -293,56 +315,22 @@ const Auth = () => {
                         <SelectItem value="fat_loss">Fat Loss</SelectItem>
                         <SelectItem value="muscle_gain">Muscle Gain</SelectItem>
                         <SelectItem value="maintain">Maintenance</SelectItem>
+                        <SelectItem value="athletic">Athletic Performance</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="signup-diet">Diet Type</Label>
-                    <Select value={signupDiet} onValueChange={setSignupDiet} required>
+                    <Label htmlFor="signup-diet">Diet Type *</Label>
+                    <Select value={signupData.diet_type} onValueChange={(value) => setSignupData({...signupData, diet_type: value})}>
                       <SelectTrigger id="signup-diet">
-                        <SelectValue placeholder="Select diet type" />
+                        <SelectValue placeholder="Select diet preference" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="veg">Vegetarian</SelectItem>
                         <SelectItem value="non_veg">Non-Vegetarian</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        id="signup-email" 
-                        type="email" 
-                        placeholder="your@email.com" 
-                        className="pl-10"
-                        value={signupEmail}
-                        onChange={(e) => setSignupEmail(e.target.value)}
-                        required 
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        id="signup-password" 
-                        type="password" 
-                        placeholder="••••••••" 
-                        className="pl-10"
-                        value={signupPassword}
-                        onChange={(e) => setSignupPassword(e.target.value)}
-                        required 
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Must be 8+ characters with uppercase, lowercase, number, and special character
-                    </p>
                   </div>
 
                   <Button type="submit" variant="hero" className="w-full" disabled={isLoading}>
