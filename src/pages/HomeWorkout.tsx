@@ -12,8 +12,9 @@ import { supabase } from "@/integrations/supabase/client";
 const HomeWorkout = () => {
   const { user } = useAuth();
   const [completions, setCompletions] = useState<Record<string, boolean>>({});
+  const [level, setLevel] = useState<"Beginner" | "Intermediate" | "Pro">("Beginner");
 
-  const exercises = [
+  const allExercises = [
     {
       name: "Push-ups",
       description: "Classic upper body exercise targeting chest, shoulders, and triceps",
@@ -88,8 +89,130 @@ const HomeWorkout = () => {
       reps: "30-60 seconds",
       benefits: "Excellent warm-up, improves coordination, burns calories, low equipment needs",
       difficulty: "Beginner"
+    },
+    {
+      name: "Burpees",
+      description: "High-intensity full-body exercise combining strength and cardio",
+      steps: [
+        "Start standing, drop into squat position",
+        "Place hands on floor and jump feet back to plank",
+        "Perform a push-up (optional for beginners)",
+        "Jump feet back to squat position",
+        "Explosively jump up with arms overhead"
+      ],
+      sets: "3-4 sets",
+      reps: "10-15 reps",
+      benefits: "Burns maximum calories, builds explosive power, full-body conditioning",
+      difficulty: "Intermediate"
+    },
+    {
+      name: "Lunges",
+      description: "Single-leg exercise targeting quads, glutes, and balance",
+      steps: [
+        "Stand with feet hip-width apart",
+        "Step forward with one leg",
+        "Lower hips until both knees are at 90 degrees",
+        "Push back to starting position",
+        "Alternate legs"
+      ],
+      sets: "3 sets",
+      reps: "12-16 reps per leg",
+      benefits: "Improves balance, strengthens legs individually, enhances mobility",
+      difficulty: "Beginner"
+    },
+    {
+      name: "Diamond Push-ups",
+      description: "Advanced push-up variation targeting triceps intensely",
+      steps: [
+        "Start in plank with hands together forming diamond shape",
+        "Keep elbows close to body",
+        "Lower chest toward hands",
+        "Push back up maintaining form",
+        "Keep core tight throughout"
+      ],
+      sets: "3-4 sets",
+      reps: "8-12 reps",
+      benefits: "Builds tricep strength, increases upper body power, improves pushing strength",
+      difficulty: "Intermediate"
+    },
+    {
+      name: "Pike Push-ups",
+      description: "Shoulder-focused push-up variation preparing for handstands",
+      steps: [
+        "Start in downward dog position (inverted V)",
+        "Keep hips high and legs straight",
+        "Lower head toward ground between hands",
+        "Push back up to starting position",
+        "Keep core engaged"
+      ],
+      sets: "3-4 sets",
+      reps: "8-15 reps",
+      benefits: "Builds shoulder strength, improves overhead pressing, core stability",
+      difficulty: "Intermediate"
+    },
+    {
+      name: "Pistol Squats",
+      description: "Advanced single-leg squat requiring strength and balance",
+      steps: [
+        "Stand on one leg, extend other leg forward",
+        "Lower down on standing leg while keeping other elevated",
+        "Go as low as possible maintaining balance",
+        "Push through heel to return to start",
+        "Use support if needed initially"
+      ],
+      sets: "3 sets",
+      reps: "5-10 reps per leg",
+      benefits: "Extreme leg strength, balance mastery, unilateral power development",
+      difficulty: "Pro"
+    },
+    {
+      name: "Handstand Push-ups",
+      description: "Elite shoulder exercise performed inverted against wall",
+      steps: [
+        "Kick up into handstand against wall",
+        "Keep core tight and body straight",
+        "Lower head toward ground in controlled manner",
+        "Press back up to full arm extension",
+        "Maintain balance throughout"
+      ],
+      sets: "3-4 sets",
+      reps: "5-10 reps",
+      benefits: "Maximum shoulder development, core strength, body control mastery",
+      difficulty: "Pro"
+    },
+    {
+      name: "Archer Push-ups",
+      description: "One-arm push-up progression with extended support arm",
+      steps: [
+        "Start in wide push-up position",
+        "Shift weight to one side as you lower",
+        "Keep opposite arm extended to side",
+        "Push up through working arm",
+        "Alternate sides each rep"
+      ],
+      sets: "3 sets",
+      reps: "6-10 reps per side",
+      benefits: "Unilateral pushing strength, prepares for one-arm push-ups, chest development",
+      difficulty: "Pro"
+    },
+    {
+      name: "Dragon Flags",
+      description: "Advanced core exercise for maximum abdominal strength",
+      steps: [
+        "Lie on bench, grab behind head for support",
+        "Raise entire body keeping it straight",
+        "Only shoulders and upper back touch bench",
+        "Lower body slowly maintaining rigid position",
+        "Control is key - avoid momentum"
+      ],
+      sets: "3 sets",
+      reps: "5-8 reps",
+      benefits: "Elite core strength, full-body tension, advanced abdominal development",
+      difficulty: "Pro"
     }
   ];
+
+  const exercises = allExercises.filter(ex => ex.difficulty.includes(level));
 
   useEffect(() => {
     if (user) {
@@ -196,13 +319,62 @@ const HomeWorkout = () => {
           </CardContent>
         </Card>
 
+        {/* Level Selector */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Select Your Level</CardTitle>
+            <CardDescription>Choose exercises that match your fitness level</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-3 flex-wrap">
+              <Button
+                variant={level === "Beginner" ? "default" : "outline"}
+                onClick={() => setLevel("Beginner")}
+                className="flex-1 min-w-[120px]"
+              >
+                Beginner
+              </Button>
+              <Button
+                variant={level === "Intermediate" ? "default" : "outline"}
+                onClick={() => setLevel("Intermediate")}
+                className="flex-1 min-w-[120px]"
+              >
+                Intermediate
+              </Button>
+              <Button
+                variant={level === "Pro" ? "default" : "outline"}
+                onClick={() => setLevel("Pro")}
+                className="flex-1 min-w-[120px]"
+              >
+                Pro
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Info Card */}
         <Card className="mb-6 border-primary/30 bg-card/50">
           <CardContent className="p-4 flex items-start gap-3">
             <Info className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
             <p className="text-sm">
-              <strong>Perfect for beginners!</strong> These exercises require zero equipment and can be done at home. 
-              Focus on proper form and gradually increase repetitions as you get stronger.
+              {level === "Beginner" && (
+                <>
+                  <strong>Perfect for beginners!</strong> These exercises require zero equipment and can be done at home. 
+                  Focus on proper form and gradually increase repetitions as you get stronger.
+                </>
+              )}
+              {level === "Intermediate" && (
+                <>
+                  <strong>Ready for a challenge!</strong> These intermediate exercises will push your limits. 
+                  Maintain good form even when fatigued and rest adequately between sets.
+                </>
+              )}
+              {level === "Pro" && (
+                <>
+                  <strong>Elite level training!</strong> These advanced exercises require significant strength and skill. 
+                  Perfect your technique and progress gradually to avoid injury.
+                </>
+              )}
             </p>
           </CardContent>
         </Card>
