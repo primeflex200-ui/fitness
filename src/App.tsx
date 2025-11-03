@@ -7,6 +7,7 @@ import { AuthProvider } from "./hooks/useAuth";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import Progress from "./pages/Progress";
 import Workouts from "./pages/Workouts";
 import Diet from "./pages/Diet";
 import Strength from "./pages/Strength";
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/progress" element={<Progress />} />
             <Route path="/workouts" element={<Workouts />} />
             <Route path="/diet" element={<Diet />} />
             <Route path="/strength" element={<Strength />} />

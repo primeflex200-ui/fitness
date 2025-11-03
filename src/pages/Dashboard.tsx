@@ -66,9 +66,10 @@ const Dashboard = () => {
     navigate("/auth");
   };
   const features = [
-    { icon: Dumbbell, title: "Workout Plans", desc: "Beginner to Pro programs", link: "/workouts", color: "text-primary" },
+    { icon: TrendingUp, title: "Progress Tracking", desc: "View detailed analytics", link: "/progress", color: "text-primary" },
+    { icon: Dumbbell, title: "Workout Plans", desc: "Beginner to Pro programs", link: "/workouts", color: "text-blue-500" },
     { icon: Apple, title: "Diet Plans", desc: "Personalized nutrition", link: "/diet", color: "text-green-500" },
-    { icon: TrendingUp, title: "Strength Tracker", desc: "Monitor your progress", link: "/strength", color: "text-blue-500" },
+    { icon: Shield, title: "Strength Tracker", desc: "Monitor your progress", link: "/strength", color: "text-violet-500" },
     { icon: Heart, title: "Cardio Fitness", desc: "Heart health tracking", link: "/cardio", color: "text-red-500" },
     { icon: Droplet, title: "Water Reminder", desc: "Stay hydrated", link: "/water", color: "text-cyan-500" },
     { icon: Footprints, title: "Step Tracker", desc: "Daily activity monitor", link: "/steps", color: "text-purple-500" },
