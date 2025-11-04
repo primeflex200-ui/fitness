@@ -1,10 +1,14 @@
-import { useState } from "react";
-import { ArrowLeft, Pill, Search, Info } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { ArrowLeft, Search, Pill, Info, User } from "lucide-react";
+import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { getSupplementRecommendations } from "@/utils/personalization";
 
 const foodMacros: Record<string, {
   protein: number;
@@ -56,10 +60,44 @@ const supplements = [
 ];
 
 const Nutrition = () => {
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchFood, setSearchFood] = useState("");
   const [macroResult, setMacroResult] = useState<typeof foodMacros[string] | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [userProfile, setUserProfile] = useState<{
+    age: number | null;
+    fitness_goal: string | null;
+    diet_type: string | null;
+  }>({ age: null, fitness_goal: null, diet_type: null });
+  const [personalizedSupplements, setPersonalizedSupplements] = useState<ReturnType<typeof getSupplementRecommendations>>([]);
+
+  useEffect(() => {
+    if (user) {
+      fetchUserProfile();
+    }
+  }, [user]);
+
+  const fetchUserProfile = async () => {
+    if (!user) return;
+    
+    const { data } = await supabase
+      .from("profiles")
+      .select("age, fitness_goal, diet_type")
+      .eq("id", user.id)
+      .single();
+
+    if (data && data.age && data.fitness_goal) {
+      setUserProfile({
+        age: data.age,
+        fitness_goal: data.fitness_goal,
+        diet_type: data.diet_type
+      });
+
+      const isVeg = data.diet_type === "veg";
+      const recommendations = getSupplementRecommendations(data.age, data.fitness_goal, isVeg);
+      setPersonalizedSupplements(recommendations);
+    }
+  };
 
   const handleSearch = () => {
     const food = searchFood.toLowerCase().trim();
@@ -77,13 +115,11 @@ const Nutrition = () => {
       <div className="container mx-auto px-4 py-6 max-w-6xl">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/dashboard")}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
+            <Link to="/dashboard">
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
             <div>
               <h1 className="text-3xl font-bold text-primary">Nutrition Guide</h1>
               <p className="text-muted-foreground">Supplements & Macro Information</p>
@@ -162,12 +198,46 @@ const Nutrition = () => {
           )}
         </Card>
 
+        {/* Personalized Info */}
+        {userProfile.age && userProfile.fitness_goal && (
+          <Card className="mb-6 border-primary/50 bg-gradient-to-r from-primary/10 to-primary/5">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <User className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold mb-1">
+                    💊 Your Personalized Supplement Plan
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Age: {userProfile.age} • Goal: {userProfile.fitness_goal?.replace('_', ' ').toUpperCase()} • 
+                    Diet: {userProfile.diet_type === "veg" ? "Vegetarian" : "Non-Vegetarian"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Supplements automatically filtered for your age and goals
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Supplements Grid */}
-        <h2 className="text-2xl font-bold mb-4">Popular Supplements</h2>
+        <h2 className="text-2xl font-bold mb-4">
+          {personalizedSupplements.length > 0 ? "Your Recommended Supplements" : "Popular Supplements"}
+        </h2>
         <div className="grid md:grid-cols-2 gap-4">
-          {supplements.map((supplement) => (
-            <Card key={supplement.name} className="p-6 hover:border-primary/50 transition-colors">
-              <h3 className="text-xl font-bold mb-2 text-primary">{supplement.name}</h3>
+          {(personalizedSupplements.length > 0 ? personalizedSupplements : supplements).map((supplement) => (
+            <Card key={supplement.name} className={`p-6 hover:border-primary/50 transition-colors ${
+              'priority' in supplement && supplement.priority === 'high' ? 'border-primary/30' : ''
+            }`}>
+              <div className="flex items-start justify-between mb-2">
+                <h3 className="text-xl font-bold text-primary">{supplement.name}</h3>
+                {'priority' in supplement && (
+                  <Badge variant={supplement.priority === 'high' ? 'default' : 'outline'}>
+                    {supplement.priority === 'high' ? 'Recommended' : supplement.priority}
+                  </Badge>
+                )}
+              </div>
               <p className="text-sm text-muted-foreground mb-4">{supplement.description}</p>
               
               {supplement.warning && (

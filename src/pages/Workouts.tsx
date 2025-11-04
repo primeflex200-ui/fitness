@@ -4,13 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Dumbbell, Clock, Repeat, Save, Calendar, TrendingDown, Flame, Info, Zap, CheckCircle2, Circle, TrendingUp } from "lucide-react";
+import { ArrowLeft, Dumbbell, Clock, Repeat, Save, Calendar, TrendingDown, Flame, Info, Zap, CheckCircle2, Circle, TrendingUp, User } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Progress as ProgressBar } from "@/components/ui/progress";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Checkbox } from "@/components/ui/checkbox";
+import { getAgeBasedWorkoutSplit, getWorkoutLevel } from "@/utils/personalization";
 
 const Workouts = () => {
   const { user } = useAuth();
@@ -19,13 +20,34 @@ const Workouts = () => {
   const [selectedDay, setSelectedDay] = useState<string>("Monday");
   const [completions, setCompletions] = useState<Record<string, boolean>>({});
   const [weeklyProgress, setWeeklyProgress] = useState<Array<{ day: string; percentage: number }>>([]);
+  const [userAge, setUserAge] = useState<number | null>(null);
+  const [ageSplit, setAgeSplit] = useState<ReturnType<typeof getAgeBasedWorkoutSplit> | null>(null);
 
   useEffect(() => {
     if (user) {
+      fetchUserProfile();
       fetchCompletions();
       fetchWeeklyProgress();
     }
   }, [user]);
+
+  const fetchUserProfile = async () => {
+    if (!user) return;
+    
+    const { data } = await supabase
+      .from("profiles")
+      .select("age")
+      .eq("id", user.id)
+      .single();
+
+    if (data?.age) {
+      setUserAge(data.age);
+      const split = getAgeBasedWorkoutSplit(data.age);
+      setAgeSplit(split);
+      const autoLevel = getWorkoutLevel(data.age);
+      setLevel(autoLevel);
+    }
+  };
 
   const fetchCompletions = async () => {
     if (!user) return;
@@ -274,16 +296,73 @@ const Workouts = () => {
           <p className="text-muted-foreground">Structured training plans for strength and fat loss</p>
         </div>
 
+        {/* Personalized Info */}
+        {ageSplit && userAge && (
+          <Card className="mb-6 border-primary/50 bg-gradient-to-r from-primary/10 to-primary/5">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <User className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold mb-2">
+                    🎯 Your Personalized Workout Plan (Age: {userAge})
+                  </p>
+                  <p className="text-sm mb-1">
+                    <strong>{ageSplit.name}</strong> - {ageSplit.description}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Training {ageSplit.daysPerWeek} days/week • {ageSplit.intensity} intensity
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {ageSplit.focus.map((focus) => (
+                      <Badge key={focus} variant="secondary" className="text-xs">{focus}</Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Disclaimer */}
         <Card className="mb-6 border-primary/50 bg-gradient-to-r from-primary/10 to-primary/5">
           <CardContent className="p-4 flex items-start gap-3">
             <Info className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
             <p className="text-sm">
-              <strong>Note:</strong> You can access any feature based on your need. Choose workouts that align with your fitness goals.
+              <strong>Note:</strong> Workouts are automatically customized based on your age and fitness level.
               Always warm up before exercising and maintain proper form to prevent injuries.
             </p>
           </CardContent>
         </Card>
+
+        {/* Age-Based Weekly Schedule */}
+        {ageSplit && (
+          <Card className="mb-6 border-primary/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-6 h-6 text-primary" />
+                Your Weekly Training Schedule
+              </CardTitle>
+              <CardDescription>Personalized for your age group</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                {ageSplit.schedule.map((schedule, idx) => (
+                  <Card key={schedule.day} className={`border-border hover:border-primary transition-all hover-scale`}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-bold">{schedule.day}</h4>
+                        <Badge variant={schedule.focus.includes("Rest") ? "outline" : "default"}>
+                          {schedule.focus.includes("Rest") ? "Rest" : "Active"}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{schedule.focus}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Weekly Schedule Overview */}
         <Card className="mb-6 border-primary/30">

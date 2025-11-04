@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,15 +6,62 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Apple, Leaf, Drumstick, Save, AlertCircle, TrendingDown, Info, Flame, Utensils } from "lucide-react";
+import { ArrowLeft, Apple, Leaf, Drumstick, Save, AlertCircle, TrendingDown, Info, Flame, Utensils, User } from "lucide-react";
 import { toast } from "sonner";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { getDietPlanType } from "@/utils/personalization";
 
 const Diet = () => {
+  const { user } = useAuth();
   const [allergies, setAllergies] = useState<string[]>([]);
   const [allergyInput, setAllergyInput] = useState("");
   const [dietType, setDietType] = useState<"veg" | "nonveg">("veg");
   const [selectedDay, setSelectedDay] = useState<string>("Monday");
+  const [userProfile, setUserProfile] = useState<{
+    age: number | null;
+    fitness_goal: string | null;
+    diet_type: string | null;
+  }>({ age: null, fitness_goal: null, diet_type: null });
+  const [activePlan, setActivePlan] = useState<"fatloss" | "lean" | "bulk" | "athletic">("fatloss");
+
+  useEffect(() => {
+    if (user) {
+      fetchUserProfile();
+    }
+  }, [user]);
+
+  const fetchUserProfile = async () => {
+    if (!user) return;
+    
+    const { data } = await supabase
+      .from("profiles")
+      .select("age, fitness_goal, diet_type")
+      .eq("id", user.id)
+      .single();
+
+    if (data) {
+      setUserProfile({
+        age: data.age,
+        fitness_goal: data.fitness_goal,
+        diet_type: data.diet_type
+      });
+
+      // Auto-set diet type
+      if (data.diet_type === "veg") {
+        setDietType("veg");
+      } else if (data.diet_type === "non_veg") {
+        setDietType("nonveg");
+      }
+
+      // Auto-set active plan based on fitness goal
+      if (data.fitness_goal) {
+        const planType = getDietPlanType(data.fitness_goal) as "fatloss" | "lean" | "bulk" | "athletic";
+        setActivePlan(planType);
+      }
+    }
+  };
 
   const weekDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -260,13 +307,36 @@ const Diet = () => {
           <p className="text-muted-foreground">Personalized meal plans for your fitness goals</p>
         </div>
 
+        {/* Personalized Info */}
+        {userProfile.age && userProfile.fitness_goal && (
+          <Card className="mb-6 border-primary/50 bg-gradient-to-r from-primary/10 to-primary/5">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <User className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold mb-1">
+                    🍽️ Your Personalized Diet Plan
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Age: {userProfile.age} • Goal: {userProfile.fitness_goal?.replace('_', ' ').toUpperCase()} • 
+                    Diet: {userProfile.diet_type === "veg" ? "Vegetarian" : "Non-Vegetarian"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Your meals are automatically customized based on your profile
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Disclaimer */}
         <Card className="mb-6 border-primary/50 bg-gradient-to-r from-primary/10 to-primary/5">
           <CardContent className="p-4 flex items-start gap-3">
             <Info className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
             <p className="text-sm">
-              <strong>Note:</strong> You can access any feature based on your need — choose what suits your fitness goal. 
-              These meal plans are guidelines; adjust portions based on your body's response and consult a nutritionist for personalized advice.
+              <strong>Note:</strong> Meals are automatically customized for your age and goal. 
+              These are guidelines; adjust portions based on your body's response and consult a nutritionist for personalized advice.
             </p>
           </CardContent>
         </Card>
@@ -369,7 +439,7 @@ const Diet = () => {
         </Card>
 
         {/* Meal Plans */}
-        <Tabs defaultValue="fatloss" className="w-full">
+        <Tabs value={activePlan} onValueChange={(v) => setActivePlan(v as typeof activePlan)} className="w-full">
           <TabsList className="grid w-full grid-cols-4 mb-8">
             <TabsTrigger value="fatloss">
               <TrendingDown className="w-4 h-4 mr-2" />
