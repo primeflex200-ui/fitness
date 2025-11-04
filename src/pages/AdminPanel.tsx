@@ -25,9 +25,6 @@ import { z } from "zod";
 const videoSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(200, "Title too long"),
   description: z.string().max(1000, "Description too long").optional(),
-  url: z.string().url("Invalid video URL").regex(/^https?:\/\/(www\.)?(youtube\.com|youtu\.be|vimeo\.com)/, {
-    message: "URL must be from YouTube or Vimeo"
-  }),
   muscle: z.string().max(100, "Muscle name too long").optional(),
   difficulty: z.enum(["Beginner", "Intermediate", "Advanced"])
 });
@@ -47,10 +44,11 @@ const AdminPanel = () => {
   const { toast } = useToast();
   const [videoTitle, setVideoTitle] = useState("");
   const [videoDescription, setVideoDescription] = useState("");
-  const [videoUrl, setVideoUrl] = useState("");
+  const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoMuscle, setVideoMuscle] = useState("");
   const [videoDifficulty, setVideoDifficulty] = useState("Beginner");
   const [isFeatured, setIsFeatured] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [feedback, setFeedback] = useState<FeedbackItem[]>([]);
 
   useEffect(() => {
@@ -111,11 +109,19 @@ const AdminPanel = () => {
   };
 
   const handleVideoUpload = async () => {
+    if (!videoFile) {
+      toast({
+        title: "File Required",
+        description: "Please select a video file to upload",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Validate input
     const validation = videoSchema.safeParse({
       title: videoTitle,
       description: videoDescription,
-      url: videoUrl,
       muscle: videoMuscle,
       difficulty: videoDifficulty
     });
@@ -129,33 +135,63 @@ const AdminPanel = () => {
       return;
     }
 
-    const { error } = await supabase.from("trainer_videos").insert({
-      title: videoTitle,
-      description: videoDescription,
-      video_url: videoUrl,
-      target_muscle: videoMuscle,
-      difficulty: videoDifficulty,
-      is_featured: isFeatured,
-    });
+    setUploading(true);
+    try {
+      // Upload video file to storage
+      const fileExt = videoFile.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `videos/${fileName}`;
 
-    if (error) {
-      toast({
-        title: "Upload Failed",
-        description: error.message,
-        variant: "destructive",
+      const { error: uploadError } = await supabase.storage
+        .from('trainer-videos')
+        .upload(filePath, videoFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('trainer-videos')
+        .getPublicUrl(filePath);
+
+      // Save video metadata to database
+      const { error: dbError } = await supabase.from("trainer_videos").insert({
+        title: videoTitle,
+        description: videoDescription,
+        video_url: publicUrl,
+        target_muscle: videoMuscle,
+        difficulty: videoDifficulty,
+        is_featured: isFeatured,
       });
-    } else {
+
+      if (dbError) {
+        throw dbError;
+      }
+
       toast({
         title: "Success!",
         description: "Video uploaded successfully",
       });
+
       // Reset form
       setVideoTitle("");
       setVideoDescription("");
-      setVideoUrl("");
+      setVideoFile(null);
       setVideoMuscle("");
       setVideoDifficulty("Beginner");
       setIsFeatured(false);
+    } catch (error: any) {
+      toast({
+        title: "Upload Failed",
+        description: error.message || "An error occurred while uploading",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -291,13 +327,19 @@ const AdminPanel = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="video-url">Video URL * (YouTube, Vimeo, or MP4)</Label>
+                  <Label htmlFor="video-file">Video File * (MP4, MOV, AVI, WEBM - Max 500MB)</Label>
                   <Input
-                    id="video-url"
-                    placeholder="https://youtube.com/watch?v=..."
-                    value={videoUrl}
-                    onChange={(e) => setVideoUrl(e.target.value)}
+                    id="video-file"
+                    type="file"
+                    accept="video/mp4,video/quicktime,video/x-msvideo,video/webm"
+                    onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+                    disabled={uploading}
                   />
+                  {videoFile && (
+                    <p className="text-sm text-muted-foreground">
+                      Selected: {videoFile.name} ({(videoFile.size / 1024 / 1024).toFixed(2)} MB)
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -337,9 +379,13 @@ const AdminPanel = () => {
                   <Label htmlFor="featured">Mark as Featured</Label>
                 </div>
 
-                <Button onClick={handleVideoUpload} className="w-full">
+                <Button 
+                  onClick={handleVideoUpload} 
+                  className="w-full"
+                  disabled={uploading}
+                >
                   <Upload className="h-4 w-4 mr-2" />
-                  Upload Video
+                  {uploading ? "Uploading..." : "Upload Video"}
                 </Button>
               </CardContent>
             </Card>
