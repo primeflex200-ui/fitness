@@ -16,7 +16,9 @@ import {
   FileText, 
   Save, 
   Shield,
-  MessageSquare 
+  MessageSquare,
+  Trash2,
+  PlayCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,6 +40,18 @@ interface FeedbackItem {
   } | null;
 }
 
+interface UploadedVideo {
+  id: string;
+  title: string;
+  description: string | null;
+  video_url: string;
+  thumbnail_url: string | null;
+  target_muscle: string | null;
+  difficulty: string | null;
+  is_featured: boolean | null;
+  created_at: string;
+}
+
 const AdminPanel = () => {
   const navigate = useNavigate();
   const { isAdmin, loading } = useAuth();
@@ -50,10 +64,13 @@ const AdminPanel = () => {
   const [isFeatured, setIsFeatured] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [feedback, setFeedback] = useState<FeedbackItem[]>([]);
+  const [uploadedVideos, setUploadedVideos] = useState<UploadedVideo[]>([]);
+  const [loadingVideos, setLoadingVideos] = useState(true);
 
   useEffect(() => {
     window.scrollTo(0, 0);
     loadFeedback();
+    loadUploadedVideos();
   }, []);
 
   useEffect(() => {
@@ -106,6 +123,75 @@ const AdminPanel = () => {
     }));
 
     setFeedback(feedbackWithProfiles);
+  };
+
+  const loadUploadedVideos = async () => {
+    setLoadingVideos(true);
+    try {
+      const { data, error } = await supabase
+        .from("trainer_videos")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      setUploadedVideos(data || []);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to load uploaded videos",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingVideos(false);
+    }
+  };
+
+  const handleDeleteVideo = async (videoId: string, videoUrl: string) => {
+    if (!confirm("Are you sure you want to delete this video? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      // Extract file path from URL
+      const urlParts = videoUrl.split('/');
+      const filePath = `videos/${urlParts[urlParts.length - 1]}`;
+
+      // Delete from storage
+      const { error: storageError } = await supabase.storage
+        .from('trainer-videos')
+        .remove([filePath]);
+
+      if (storageError) {
+        console.error("Storage deletion error:", storageError);
+      }
+
+      // Delete from database
+      const { error: dbError } = await supabase
+        .from("trainer_videos")
+        .delete()
+        .eq("id", videoId);
+
+      if (dbError) {
+        throw dbError;
+      }
+
+      toast({
+        title: "Success",
+        description: "Video deleted successfully",
+      });
+
+      // Reload videos
+      loadUploadedVideos();
+    } catch (error: any) {
+      toast({
+        title: "Deletion Failed",
+        description: error.message || "Failed to delete video",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleVideoUpload = async () => {
@@ -184,6 +270,9 @@ const AdminPanel = () => {
       setVideoMuscle("");
       setVideoDifficulty("Beginner");
       setIsFeatured(false);
+      
+      // Reload videos list
+      loadUploadedVideos();
     } catch (error: any) {
       toast({
         title: "Upload Failed",
@@ -387,6 +476,102 @@ const AdminPanel = () => {
                   <Upload className="h-4 w-4 mr-2" />
                   {uploading ? "Uploading..." : "Upload Video"}
                 </Button>
+              </CardContent>
+            </Card>
+
+            {/* Uploaded Videos List */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Video className="h-5 w-5" />
+                  Uploaded Videos ({uploadedVideos.length})
+                </CardTitle>
+                <CardDescription>
+                  Manage your uploaded training videos
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loadingVideos ? (
+                  <p className="text-muted-foreground text-center py-8">Loading videos...</p>
+                ) : uploadedVideos.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">
+                    No videos uploaded yet. Upload your first video above!
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {uploadedVideos.map((video) => (
+                      <Card key={video.id} className="bg-muted/30">
+                        <CardContent className="pt-4">
+                          <div className="flex items-start gap-4">
+                            {/* Thumbnail or placeholder */}
+                            <div className="w-32 h-20 rounded bg-gradient-to-br from-primary/30 to-secondary/30 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                              {video.thumbnail_url ? (
+                                <img 
+                                  src={video.thumbnail_url} 
+                                  alt={video.title}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <PlayCircle className="w-8 h-8 text-primary" />
+                              )}
+                            </div>
+
+                            {/* Video Info */}
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-semibold text-sm mb-1 truncate">{video.title}</h4>
+                              {video.description && (
+                                <p className="text-xs text-muted-foreground mb-2 line-clamp-1">
+                                  {video.description}
+                                </p>
+                              )}
+                              <div className="flex flex-wrap gap-2 text-xs">
+                                {video.target_muscle && (
+                                  <span className="px-2 py-1 bg-primary/10 text-primary rounded capitalize">
+                                    {video.target_muscle}
+                                  </span>
+                                )}
+                                {video.difficulty && (
+                                  <span className="px-2 py-1 bg-secondary/10 text-secondary-foreground rounded capitalize">
+                                    {video.difficulty}
+                                  </span>
+                                )}
+                                {video.is_featured && (
+                                  <span className="px-2 py-1 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 rounded">
+                                    Featured
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-2">
+                                Uploaded: {new Date(video.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex gap-2 flex-shrink-0">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => window.open(video.video_url, "_blank")}
+                                title="Preview video"
+                              >
+                                <PlayCircle className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDeleteVideo(video.id, video.video_url)}
+                                title="Delete video"
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
