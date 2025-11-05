@@ -28,7 +28,8 @@ const videoSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(200, "Title too long"),
   description: z.string().max(1000, "Description too long").optional(),
   muscle: z.string().max(100, "Muscle name too long").optional(),
-  difficulty: z.enum(["Beginner", "Intermediate", "Advanced"])
+  difficulty: z.enum(["Beginner", "Intermediate", "Advanced"]),
+  trainerName: z.string().trim().min(1, "Trainer name is required").max(100, "Trainer name too long")
 });
 
 interface FeedbackItem {
@@ -48,6 +49,7 @@ interface UploadedVideo {
   thumbnail_url: string | null;
   target_muscle: string | null;
   difficulty: string | null;
+  trainer_name: string | null;
   is_featured: boolean | null;
   created_at: string;
 }
@@ -59,8 +61,10 @@ const AdminPanel = () => {
   const [videoTitle, setVideoTitle] = useState("");
   const [videoDescription, setVideoDescription] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [videoMuscle, setVideoMuscle] = useState("");
   const [videoDifficulty, setVideoDifficulty] = useState("Beginner");
+  const [trainerName, setTrainerName] = useState("");
   const [isFeatured, setIsFeatured] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [feedback, setFeedback] = useState<FeedbackItem[]>([]);
@@ -209,7 +213,8 @@ const AdminPanel = () => {
       title: videoTitle,
       description: videoDescription,
       muscle: videoMuscle,
-      difficulty: videoDifficulty
+      difficulty: videoDifficulty,
+      trainerName: trainerName
     });
 
     if (!validation.success) {
@@ -239,18 +244,48 @@ const AdminPanel = () => {
         throw uploadError;
       }
 
-      // Get public URL
+      // Get public URL for video
       const { data: { publicUrl } } = supabase.storage
         .from('trainer-videos')
         .getPublicUrl(filePath);
+
+      // Upload thumbnail if provided
+      let thumbnailUrl = null;
+      if (thumbnailFile) {
+        const thumbExt = thumbnailFile.name.split('.').pop();
+        const thumbFileName = `thumb-${Date.now()}-${Math.random().toString(36).substring(7)}.${thumbExt}`;
+        const thumbPath = `thumbnails/${thumbFileName}`;
+
+        const { error: thumbUploadError } = await supabase.storage
+          .from('trainer-videos')
+          .upload(thumbPath, thumbnailFile, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (thumbUploadError) {
+          console.error("Thumbnail upload error:", thumbUploadError);
+          toast({
+            title: "Warning",
+            description: "Video uploaded but thumbnail failed. Continuing...",
+          });
+        } else {
+          const { data: { publicUrl: thumbPublicUrl } } = supabase.storage
+            .from('trainer-videos')
+            .getPublicUrl(thumbPath);
+          thumbnailUrl = thumbPublicUrl;
+        }
+      }
 
       // Save video metadata to database
       const { error: dbError } = await supabase.from("trainer_videos").insert({
         title: videoTitle,
         description: videoDescription,
         video_url: publicUrl,
+        thumbnail_url: thumbnailUrl,
         target_muscle: videoMuscle,
         difficulty: videoDifficulty,
+        trainer_name: trainerName,
         is_featured: isFeatured,
       });
 
@@ -267,8 +302,10 @@ const AdminPanel = () => {
       setVideoTitle("");
       setVideoDescription("");
       setVideoFile(null);
+      setThumbnailFile(null);
       setVideoMuscle("");
       setVideoDifficulty("Beginner");
+      setTrainerName("");
       setIsFeatured(false);
       
       // Reload videos list
@@ -416,6 +453,16 @@ const AdminPanel = () => {
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="trainer-name">Trainer Name *</Label>
+                  <Input
+                    id="trainer-name"
+                    placeholder="E.g., Coach Marcus"
+                    value={trainerName}
+                    onChange={(e) => setTrainerName(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="video-file">Video File * (MP4, MOV, AVI, WEBM - Max 500MB)</Label>
                   <Input
                     id="video-file"
@@ -427,6 +474,22 @@ const AdminPanel = () => {
                   {videoFile && (
                     <p className="text-sm text-muted-foreground">
                       Selected: {videoFile.name} ({(videoFile.size / 1024 / 1024).toFixed(2)} MB)
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="thumbnail-file">Thumbnail Image (Optional - JPG, PNG, WEBP)</Label>
+                  <Input
+                    id="thumbnail-file"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={(e) => setThumbnailFile(e.target.files?.[0] || null)}
+                    disabled={uploading}
+                  />
+                  {thumbnailFile && (
+                    <p className="text-sm text-muted-foreground">
+                      Selected: {thumbnailFile.name} ({(thumbnailFile.size / 1024 / 1024).toFixed(2)} MB)
                     </p>
                   )}
                 </div>
@@ -519,6 +582,11 @@ const AdminPanel = () => {
                             {/* Video Info */}
                             <div className="flex-1 min-w-0">
                               <h4 className="font-semibold text-sm mb-1 truncate">{video.title}</h4>
+                              {video.trainer_name && (
+                                <p className="text-xs text-primary mb-1">
+                                  by {video.trainer_name}
+                                </p>
+                              )}
                               {video.description && (
                                 <p className="text-xs text-muted-foreground mb-2 line-clamp-1">
                                   {video.description}

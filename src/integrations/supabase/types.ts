@@ -222,6 +222,7 @@ export type Database = {
           target_muscle: string | null
           thumbnail_url: string | null
           title: string
+          trainer_name: string | null
           updated_at: string | null
           video_url: string
         }
@@ -234,6 +235,7 @@ export type Database = {
           target_muscle?: string | null
           thumbnail_url?: string | null
           title: string
+          trainer_name?: string | null
           updated_at?: string | null
           video_url: string
         }
@@ -246,6 +248,7 @@ export type Database = {
           target_muscle?: string | null
           thumbnail_url?: string | null
           title?: string
+          trainer_name?: string | null
           updated_at?: string | null
           video_url?: string
         }

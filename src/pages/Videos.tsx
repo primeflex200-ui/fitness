@@ -16,6 +16,7 @@ interface TrainerVideo {
   thumbnail_url: string | null;
   target_muscle: string | null;
   difficulty: string | null;
+  trainer_name: string | null;
   is_featured: boolean | null;
   created_at: string;
 }
@@ -194,8 +195,11 @@ const Videos = () => {
                       />
                     </Button>
                   </div>
+                  {video.trainer_name && (
+                    <CardDescription className="text-sm text-primary">by {video.trainer_name}</CardDescription>
+                  )}
                   {video.description && (
-                    <CardDescription className="text-sm line-clamp-2">{video.description}</CardDescription>
+                    <CardDescription className="text-sm line-clamp-2 mt-1">{video.description}</CardDescription>
                   )}
                 </CardHeader>
 
