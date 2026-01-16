@@ -1,0 +1,34 @@
+.flip-container {
+  perspective: 1000px;
+  width: 100%;
+  max-width: 42rem;
+}
+
+.flip-card {
+  position: relative;
+  width: 100%;
+  min-height: 600px;
+  transition: transform 0.8s;
+  transform-style: preserve-3d;
+}
+
+.flip-container.flipped .flip-card {
+  transform: rotateY(180deg);
+}
+
+.flip-card-front,
+.flip-card-back {
+  position: absolute;
+  width: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.flip-card-back {
+  transform: rotateY(180deg);
+}
+
+.flip-toggle-btn {
+  margin-top: 1rem;
+  text-align: center;
+}

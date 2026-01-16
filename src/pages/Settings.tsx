@@ -1,15 +1,16 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Settings as SettingsIcon, User, Bell, Moon, Info, Save, Instagram } from "lucide-react";
+import { ArrowLeft, Settings as SettingsIcon, User, Moon, Sun, Info, Save, Instagram, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { useTheme } from "@/components/theme-provider";
 import { z } from "zod";
 
 const profileSchema = z.object({
@@ -29,9 +30,13 @@ const profileSchema = z.object({
 });
 
 const Settings = () => {
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [manualUser, setManualUser] = useState<any>(null);
   const [profile, setProfile] = useState({
     full_name: "",
     email: "",
@@ -42,39 +47,174 @@ const Settings = () => {
     fitness_goal: "",
     diet_type: ""
   });
+  
+
+
+  // Manual session check on mount
+  useEffect(() => {
+    const checkSession = async () => {
+      console.log('Manually checking session...');
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Manual session check result:', session);
+      if (session?.user) {
+        console.log('✅ Manual check found user:', session.user.email);
+        setManualUser(session.user);
+      } else {
+        console.log('❌ Manual check found no session');
+      }
+    };
+    checkSession();
+  }, []);
+
+
+
+  const fetchProfile = useCallback(async () => {
+    const currentUser = user || manualUser;
+    if (!currentUser) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      console.log('🔄 Loading profile for user:', currentUser.id);
+      
+      // ALWAYS load from localStorage first (instant, reliable)
+      const localStorageKey = `profile_${currentUser.id}`;
+      const cachedProfile = localStorage.getItem(localStorageKey);
+      
+      if (cachedProfile) {
+        try {
+          console.log('✅ Loading profile from localStorage');
+          const parsedProfile = JSON.parse(cachedProfile);
+          const profileData = {
+            full_name: parsedProfile.full_name || "",
+            email: parsedProfile.email || currentUser.email || "",
+            age: parsedProfile.age?.toString() || "",
+            gender: parsedProfile.gender || "",
+            height: parsedProfile.height?.toString() || "",
+            weight: parsedProfile.weight?.toString() || "",
+            fitness_goal: parsedProfile.fitness_goal || "",
+            diet_type: parsedProfile.diet_type || ""
+          };
+          setProfile(profileData);
+          console.log('✅ Profile loaded from localStorage:', profileData);
+        } catch (err) {
+          console.error('Error parsing localStorage profile:', err);
+        }
+      } else {
+        // No localStorage data, set defaults
+        console.log('ℹ️ No localStorage profile found, using defaults');
+        setProfile({
+          full_name: "",
+          email: currentUser.email || "",
+          age: "",
+          gender: "",
+          height: "",
+          weight: "",
+          fitness_goal: "",
+          diet_type: ""
+        });
+      }
+      
+      // Then try to fetch from database (backup only)
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', currentUser.id)
+        .single();
+
+      if (error) {
+        console.error('⚠️ Error fetching profile from database:', error);
+        // Don't show error if we have localStorage data
+        if (!cachedProfile) {
+          console.log('ℹ️ No database profile, using localStorage or defaults');
+        }
+      } else if (data) {
+        console.log('✅ Profile data loaded from database:', data);
+        
+        // Only update if database has actual data AND localStorage didn't have it
+        const hasData = data.full_name || data.age || data.gender || data.height || data.weight || data.fitness_goal || data.diet_type;
+        
+        if (hasData && !cachedProfile) {
+          console.log('✅ Using database data (no localStorage found)');
+          const profileData = {
+            full_name: data.full_name || "",
+            email: data.email || currentUser.email || "",
+            age: data.age?.toString() || "",
+            gender: data.gender || "",
+            height: data.height?.toString() || "",
+            weight: data.weight?.toString() || "",
+            fitness_goal: data.fitness_goal || "",
+            diet_type: data.diet_type || ""
+          };
+          
+          setProfile(profileData);
+          
+          // Save to localStorage for next time
+          localStorage.setItem(localStorageKey, JSON.stringify({
+            full_name: data.full_name,
+            email: data.email,
+            age: data.age,
+            gender: data.gender,
+            height: data.height,
+            weight: data.weight,
+            fitness_goal: data.fitness_goal,
+            diet_type: data.diet_type
+          }));
+        } else if (cachedProfile) {
+          console.log('✅ Keeping localStorage data (already loaded)');
+        }
+      }
+    } catch (err) {
+      console.error('Unexpected error loading profile:', err);
+    } finally {
+      console.log('Setting loading to false');
+      setLoading(false);
+    }
+  }, [user, manualUser]);
 
   useEffect(() => {
-    if (user) {
-      fetchProfile();
+    console.log('=== Settings Page Debug ===');
+    console.log('authLoading:', authLoading);
+    console.log('user:', user);
+    console.log('manualUser:', manualUser);
+    console.log('user exists:', !!(user || manualUser));
+    
+    if (!authLoading) {
+      const currentUser = user || manualUser;
+      if (currentUser) {
+        console.log('✅ User authenticated, fetching profile');
+        console.log('User ID:', currentUser.id);
+        console.log('User email:', currentUser.email);
+        fetchProfile();
+      } else {
+        console.log('❌ No user found - user is not authenticated');
+        console.log('This should not happen if you are logged in!');
+        setLoading(false);
+      }
+    } else {
+      console.log('⏳ Still loading auth state...');
     }
-  }, [user]);
-
-  const fetchProfile = async () => {
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
-
-    if (data) {
-      setProfile({
-        full_name: data.full_name || "",
-        email: data.email || "",
-        age: data.age?.toString() || "",
-        gender: data.gender || "",
-        height: data.height?.toString() || "",
-        weight: data.weight?.toString() || "",
-        fitness_goal: data.fitness_goal || "",
-        diet_type: data.diet_type || ""
-      });
-    }
-    setLoading(false);
-  };
+  }, [user, manualUser, authLoading, fetchProfile]);
 
   const handleSave = async () => {
-    if (!user) return;
+    console.log('handleSave called - user:', user);
+    
+    // Refresh session to ensure we have a valid user
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    console.log('Current session:', currentSession);
+    
+    const currentUser = currentSession?.user || user;
+    
+    if (!currentUser) {
+      console.error('No user found after session check, cannot save');
+      toast.error('You must be logged in to save changes');
+      return;
+    }
+
+    console.log('Starting save with profile data:', profile);
+    console.log('Using user ID:', currentUser.id);
+    setSaving(true);
 
     // Validate input
     const validation = profileSchema.safeParse({
@@ -88,31 +228,61 @@ const Settings = () => {
     });
 
     if (!validation.success) {
+      console.error('Validation failed:', validation.error.errors);
       toast.error(validation.error.errors[0].message);
+      setSaving(false);
       return;
     }
 
-    const updateData: any = {
-      full_name: profile.full_name,
-      age: profile.age ? parseInt(profile.age) : null,
-      gender: profile.gender || null,
-      height: profile.height ? parseFloat(profile.height) : null,
-      weight: profile.weight ? parseFloat(profile.weight) : null,
-      fitness_goal: profile.fitness_goal || null,
-      diet_type: profile.diet_type || null
-    };
+    try {
+      const updateData: any = {
+        full_name: profile.full_name,
+        age: profile.age ? parseInt(profile.age) : null,
+        gender: profile.gender || null,
+        height: profile.height ? parseFloat(profile.height) : null,
+        weight: profile.weight ? parseFloat(profile.weight) : null,
+        fitness_goal: profile.fitness_goal || null,
+        diet_type: profile.diet_type || null
+      };
 
-    const { error } = await supabase
-      .from('profiles')
-      .update(updateData)
-      .eq('id', user.id);
+      console.log('Saving profile with data:', updateData);
 
-    if (error) {
-      toast.error("Failed to update profile");
-    } else {
-      toast.success("Profile updated successfully!");
-      setEditing(false);
-      fetchProfile();
+      // Save to localStorage immediately (for instant persistence)
+      const localStorageKey = `profile_${currentUser.id}`;
+      localStorage.setItem(localStorageKey, JSON.stringify(updateData));
+      console.log('✅ Profile saved to localStorage');
+
+      // Use UPSERT instead of UPDATE (creates if doesn't exist, updates if exists)
+      const { data, error } = await supabase
+        .from('profiles')
+        .upsert({
+          id: currentUser.id,
+          email: currentUser.email,
+          ...updateData,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'id'
+        })
+        .select();
+
+      if (error) {
+        console.error('❌ Error saving profile to database:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
+        toast.success("Changes saved locally!");
+        // Still saved to localStorage, so changes persist
+        setEditing(false);
+      } else {
+        console.log('✅ Profile saved to database successfully:', data);
+        toast.success("Profile updated successfully!");
+        setEditing(false);
+        // DON'T refresh from database - keep the current state
+        // The data is already in profile state and localStorage
+      }
+    } catch (err) {
+      console.error('Unexpected error saving profile:', err);
+      toast.error('An unexpected error occurred while saving');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -130,6 +300,34 @@ const Settings = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
+  const currentUser = user || manualUser;
+
+  if (!currentUser && !authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle>Not Authenticated</CardTitle>
+            <CardDescription>You must be logged in to access settings</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Debug Info:
+                <br />- useAuth user: {user ? '✅ Found' : '❌ Null'}
+                <br />- Manual check user: {manualUser ? '✅ Found' : '❌ Null'}
+                <br />- Auth loading: {authLoading ? 'Yes' : 'No'}
+              </p>
+              <Link to="/auth">
+                <Button className="w-full">Go to Login</Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -166,6 +364,28 @@ const Settings = () => {
                 <strong>Hey, {profile.full_name}!</strong> You're working toward {getFitnessGoalDisplay(profile.fitness_goal)}. 
                 Stay consistent 💪
               </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Admin Panel Access */}
+        {(user?.email === 'primeflex200@gmail.com' || profile.email === 'primeflex200@gmail.com') && (
+          <Card className="mb-6 border-blue-500/50 bg-gradient-to-r from-blue-500/10 to-blue-600/5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-blue-500" />
+                Admin Access
+              </CardTitle>
+              <CardDescription>Manage videos and platform content</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                onClick={() => navigate('/admin')} 
+                className="w-full bg-blue-600 hover:bg-blue-700"
+              >
+                <Shield className="w-4 h-4 mr-2" />
+                Open Admin Panel
+              </Button>
             </CardContent>
           </Card>
         )}
@@ -283,14 +503,22 @@ const Settings = () => {
                   </Select>
                 </div>
                 <div className="flex gap-2">
-                  <Button onClick={handleSave} className="flex-1 gap-2">
+                  <Button 
+                    onClick={handleSave} 
+                    className="flex-1 gap-2"
+                    disabled={saving}
+                  >
                     <Save className="w-4 h-4" />
-                    Save Changes
+                    {saving ? 'Saving...' : 'Save Changes'}
                   </Button>
-                  <Button variant="outline" onClick={() => {
-                    setEditing(false);
-                    fetchProfile();
-                  }}>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setEditing(false);
+                      fetchProfile();
+                    }}
+                    disabled={saving}
+                  >
                     Cancel
                   </Button>
                 </div>
@@ -338,45 +566,11 @@ const Settings = () => {
           </CardContent>
         </Card>
 
-        {/* Notifications */}
-        <Card className="mb-6 border-border bg-card/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="w-5 h-5 text-primary" />
-              Notifications
-            </CardTitle>
-            <CardDescription>Manage your alerts and reminders</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="workout-reminder">Workout Reminders</Label>
-                <p className="text-sm text-muted-foreground">Daily training notifications</p>
-              </div>
-              <Switch id="workout-reminder" defaultChecked />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="water-reminder">Water Reminders</Label>
-                <p className="text-sm text-muted-foreground">Hydration alerts</p>
-              </div>
-              <Switch id="water-reminder" defaultChecked />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="meal-reminder">Meal Reminders</Label>
-                <p className="text-sm text-muted-foreground">Diet plan notifications</p>
-              </div>
-              <Switch id="meal-reminder" />
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Appearance */}
         <Card className="mb-6 border-border bg-card/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Moon className="w-5 h-5 text-primary" />
+              {theme === "dark" ? <Moon className="w-5 h-5 text-primary" /> : <Sun className="w-5 h-5 text-primary" />}
               Appearance
             </CardTitle>
             <CardDescription>Customize the app theme</CardDescription>
@@ -385,9 +579,15 @@ const Settings = () => {
             <div className="flex items-center justify-between">
               <div>
                 <Label htmlFor="dark-mode">Dark Mode</Label>
-                <p className="text-sm text-muted-foreground">Currently active</p>
+                <p className="text-sm text-muted-foreground">
+                  {theme === "dark" ? "Currently active" : "Currently inactive"}
+                </p>
               </div>
-              <Switch id="dark-mode" defaultChecked disabled />
+              <Switch 
+                id="dark-mode" 
+                checked={theme === "dark"}
+                onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+              />
             </div>
           </CardContent>
         </Card>
@@ -446,11 +646,18 @@ const Settings = () => {
         </Card>
 
         {/* Logout */}
-        <Link to="/">
-          <Button variant="destructive" className="w-full mt-8">
-            Logout
-          </Button>
-        </Link>
+        <Button 
+          variant="destructive" 
+          className="w-full mt-8"
+          onClick={async () => {
+            const { sessionManager } = await import('@/lib/sessionManager');
+            await sessionManager.clearSession();
+            await supabase.auth.signOut();
+            navigate('/');
+          }}
+        >
+          Logout
+        </Button>
       </div>
     </div>
   );

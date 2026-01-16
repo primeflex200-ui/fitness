@@ -1,12 +1,25 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.0a0bc892d69c42f88bc96075e4394e88',
-  appName: 'flex-zen-coach',
+  appId: 'com.primeflex.app',
+  appName: 'PRIME FLEX',
   webDir: 'dist',
   server: {
-    url: 'https://0a0bc892-d69c-42f8-8bc9-6075e4394e88.lovableproject.com?forceHideBadge=true',
-    cleartext: true
+    // Uncomment and replace with your IP when using live reload
+    // url: 'http://192.168.1.x:5173',
+    // cleartext: true
+  },
+  plugins: {
+    SplashScreen: {
+      launchShowDuration: 2000,
+      backgroundColor: "#000000",
+      showSpinner: false
+    },
+    GoogleAuth: {
+      scopes: ['profile', 'email'],
+      serverClientId: '514289536306-catbvaoa4rber85geliatnircnisp1nd.apps.googleusercontent.com',
+      forceCodeForRefreshToken: true
+    }
   }
 };
 

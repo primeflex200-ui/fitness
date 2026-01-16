@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Water Notifications</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .log {
+            background: #f0f0f0;
+            padding: 10px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log div {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Water Notification Test</h1>
+    
+    <div>
+        <p>Permission: <span id="permission">checking...</span></p>
+        <button onclick="requestPermission()">Request Permission</button>
+    </div>
+
+    <div>
+        <label>Interval (minutes): <input type="number" id="interval" value="1" min="1" max="60"></label>
+        <button onclick="startReminders()">Start Reminders</button>
+        <button onclick="stopReminders()">Stop Reminders</button>
+    </div>
+
+    <div>
+        <button onclick="sendTestNotification()">Send Test Notification NOW</button>
+    </div>
+
+    <div class="log" id="log"></div>
+
+    <script>
+        let timerId = null;
+        let userId = 'test-user-123';
+
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.insertBefore(entry, logDiv.firstChild);
+        }
+
+        function updatePermission() {
+            const permSpan = document.getElementById('permission');
+            permSpan.textContent = Notification.permission;
+            permSpan.style.color = Notification.permission === 'granted' ? 'green' : 'red';
+        }
+
+        async function requestPermission() {
+            log('Requesting notification permission...');
+            const permission = await Notification.requestPermission();
+            log(`Permission result: ${permission}`);
+            updatePermission();
+        }
+
+        function sendTestNotification() {
+            log('Attempting to send test notification...');
+            
+            if (Notification.permission !== 'granted') {
+                log('ERROR: Permission not granted!');
+                alert('Please click "Request Permission" first');
+                return;
+            }
+
+            try {
+                const notification = new Notification('💧 Test Notification', {
+                    body: 'This is a test water reminder!',
+                    icon: '/primeflex-icon.svg',
+                    tag: 'test-notification',
+                });
+
+                notification.onclick = () => {
+                    log('Notification clicked!');
+                    notification.close();
+                };
+
+                log('✅ Test notification sent successfully!');
+            } catch (error) {
+                log(`❌ Error sending notification: ${error.message}`);
+            }
+        }
+
+        function startReminders() {
+            const intervalMinutes = parseInt(document.getElementById('interval').value);
+            
+            if (Notification.permission !== 'granted') {
+                alert('Please request permission first!');
+                return;
+            }
+
+            // Stop existing timer
+            if (timerId) {
+                clearInterval(timerId);
+                log('Stopped existing timer');
+            }
+
+            const intervalMs = intervalMinutes * 60 * 1000;
+            log(`Starting reminders every ${intervalMinutes} minutes (${intervalMs}ms)`);
+
+            // Send immediate notification
+            log('Sending IMMEDIATE notification...');
+            sendTestNotification();
+
+            // Set up recurring timer
+            timerId = setInterval(() => {
+                log('⏰ Timer triggered! Sending notification...');
+                sendTestNotification();
+            }, intervalMs);
+
+            log(`✅ Timer created with ID: ${timerId}`);
+            log(`Next notification at: ${new Date(Date.now() + intervalMs).toLocaleTimeString()}`);
+        }
+
+        function stopReminders() {
+            if (timerId) {
+                clearInterval(timerId);
+                log(`Stopped timer ID: ${timerId}`);
+                timerId = null;
+            } else {
+                log('No timer running');
+            }
+        }
+
+        // Initialize
+        updatePermission();
+        log('Test page loaded. Click "Request Permission" to start.');
+    </script>
+</body>
+</html>

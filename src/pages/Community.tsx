@@ -79,7 +79,18 @@ const Community = () => {
   }, [toast]);
 
   const handleSend = async () => {
-    if (!user) return;
+    // Get current user directly from Supabase
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    
+    if (!currentUser) {
+      toast({
+        title: "Error",
+        description: "Please log in to send messages",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
 
     // Validate input
     const validation = messageSchema.safeParse({ message: newMessage });
@@ -95,15 +106,16 @@ const Community = () => {
 
     setIsSending(true);
     const { error } = await supabase.from("community_messages").insert({
-      user_id: user.id,
-      user_name: user.email?.split("@")[0] || "User",
+      user_id: currentUser.id,
+      user_name: currentUser.email?.split("@")[0] || "User",
       message: newMessage.trim(),
     });
 
     if (error) {
+      console.error("Community message error:", error);
       toast({
         title: "Error",
-        description: "Failed to send message",
+        description: error.message || "Failed to send message",
         variant: "destructive",
       });
     } else {

@@ -4,15 +4,28 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Home, Clock, TrendingUp, Info } from "lucide-react";
+import { ArrowLeft, Home, Clock, TrendingUp, Info, Play } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import ExerciseVideoPlayer from "@/components/ExerciseVideoPlayer";
 
 const HomeWorkout = () => {
   const { user } = useAuth();
+  const [manualUser, setManualUser] = useState<any>(null);
   const [completions, setCompletions] = useState<Record<string, boolean>>({});
   const [level, setLevel] = useState<"Beginner" | "Intermediate" | "Pro">("Beginner");
+
+  // Manual session check on mount
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setManualUser(session.user);
+      }
+    };
+    checkSession();
+  }, []);
 
   const allExercises = [
     {
@@ -215,19 +228,21 @@ const HomeWorkout = () => {
   const exercises = allExercises.filter(ex => ex.difficulty.includes(level));
 
   useEffect(() => {
-    if (user) {
+    const currentUser = user || manualUser;
+    if (currentUser) {
       fetchCompletions();
     }
-  }, [user]);
+  }, [user, manualUser]);
 
   const fetchCompletions = async () => {
-    if (!user) return;
+    const currentUser = user || manualUser;
+    if (!currentUser) return;
 
     const today = new Date().toISOString().split('T')[0];
     const { data } = await supabase
       .from('workout_completions')
       .select('exercise_name, completed')
-      .eq('user_id', user.id)
+      .eq('user_id', currentUser.id)
       .eq('workout_date', today)
       .eq('workout_type', 'home');
 
@@ -241,7 +256,8 @@ const HomeWorkout = () => {
   };
 
   const toggleCompletion = async (exerciseName: string) => {
-    if (!user) {
+    const currentUser = user || manualUser;
+    if (!currentUser) {
       toast.error("Please log in to track progress");
       return;
     }
@@ -252,7 +268,7 @@ const HomeWorkout = () => {
     const { error } = await supabase
       .from('workout_completions')
       .upsert({
-        user_id: user.id,
+        user_id: currentUser.id,
         workout_date: today,
         workout_type: 'home',
         exercise_name: exerciseName,
@@ -392,11 +408,17 @@ const HomeWorkout = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <Checkbox
+                        id={`exercise-${i}`}
                         checked={completions[exercise.name] || false}
-                        onCheckedChange={() => toggleCompletion(exercise.name)}
-                        className="w-6 h-6"
+                        onCheckedChange={(checked) => toggleCompletion(exercise.name)}
+                        className="w-6 h-6 cursor-pointer"
                       />
                       <CardTitle className="text-xl">{exercise.name}</CardTitle>
+                      <ExerciseVideoPlayer
+                        title={exercise.name}
+                        // No explicit path; component will look up by title in trainer_videos
+                        buttonClassName="h-8 w-8"
+                      />
                     </div>
                     <CardDescription>{exercise.description}</CardDescription>
                   </div>

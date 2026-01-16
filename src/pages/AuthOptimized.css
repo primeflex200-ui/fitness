@@ -1,0 +1,70 @@
+/* Ultra-aggressive scroll and interaction performance optimizations */
+* {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: auto !important;
+}
+
+html {
+  scroll-behavior: auto !important;
+  overflow-x: hidden;
+}
+
+body {
+  overflow-x: hidden;
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+  overscroll-behavior-x: none;
+}
+
+/* Optimize scrollable containers */
+.auth-container {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  contain: strict;
+}
+
+/* Optimize form elements - instant response */
+input, select, textarea, button {
+  transform: translateZ(0);
+  contain: layout style;
+  transition: all 0.1s ease-out !important; /* Fast transitions */
+}
+
+input:focus, select:focus, textarea:focus {
+  transition: all 0.05s ease-out !important; /* Instant focus */
+}
+
+/* Reduce paint during scroll */
+.glass-surface,
+.glass-surface__content {
+  will-change: auto;
+  contain: strict;
+  transform: translateZ(0);
+}
+
+/* Optimize card scrolling */
+.card {
+  contain: strict;
+  transform: translateZ(0);
+}
+
+/* Fast button response */
+button:active {
+  transform: translateZ(0) scale(0.98);
+  transition: transform 0.05s ease-out !important;
+}
+
+/* Instant hover effects */
+button:hover, 
+input:hover, 
+select:hover {
+  transition: all 0.05s ease-out !important;
+}
+
+/* Optimize tabs */
+[role="tablist"],
+[role="tab"],
+[role="tabpanel"] {
+  contain: layout style;
+  transform: translateZ(0);
+}

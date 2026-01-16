@@ -21,12 +21,16 @@ const Feedback = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
-    if (!user) {
+    // Get current user directly from Supabase
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    
+    if (!currentUser) {
       toast({
         title: "Error",
-        description: "You must be logged in",
+        description: "Please log in to submit feedback",
         variant: "destructive",
       });
+      navigate("/auth");
       return;
     }
 
@@ -43,23 +47,26 @@ const Feedback = () => {
     }
 
     setIsSubmitting(true);
-    const { error } = await supabase.from("feedback").insert({
-      user_id: user.id,
-      message: feedback.trim(),
-    });
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
+    try {
+      const { error } = await supabase.from("feedback").insert({
+        user_id: currentUser.id,
+        message: feedback.trim(),
       });
-    } else {
+
+      if (error) throw error;
+
       toast({
         title: "Success!",
         description: "Your feedback has been submitted",
       });
       setFeedback("");
+    } catch (err: any) {
+      console.error("[Supabase] feedback insert error:", err);
+      toast({
+        title: "Error",
+        description: err?.message || "Failed to submit feedback",
+        variant: "destructive",
+      });
     }
     setIsSubmitting(false);
   };

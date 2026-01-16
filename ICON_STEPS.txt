@@ -1,0 +1,78 @@
+========================================
+  PRIME FLEX - CHANGE APP ICON
+  Simple Step-by-Step Guide
+========================================
+
+STEP 1: Open Android Asset Studio
+----------------------------------
+Website: https://romannurik.github.io/AndroidAssetStudio/icons-launcher.html
+(Should open automatically in your browser)
+
+
+STEP 2: Upload Your Logo
+----------------------------------
+1. Click the "Image" tab
+2. Click "Choose File" button
+3. Navigate to and select:
+   C:\Users\ksair\OneDrive\Pictures\WhatsApp Image 2025-09-10 at 3.30.25 PM (1).jpeg
+
+
+STEP 3: Adjust Settings
+----------------------------------
+- Padding: 10-20% (adjust to center your logo nicely)
+- Shape: Choose what looks best (None, Circle, or Rounded Square)
+- Background: Choose your brand color or transparent
+
+
+STEP 4: Download Icons
+----------------------------------
+1. Preview how it looks on different devices
+2. Click the "Download" button at the bottom
+3. Save the ZIP file (probably goes to Downloads folder)
+
+
+STEP 5: Extract ZIP File
+----------------------------------
+1. Find the downloaded ZIP file (check Downloads folder)
+2. Right-click > Extract All
+3. Choose a location to extract
+
+
+STEP 6: Copy Icons to Project
+----------------------------------
+Copy these folders from the extracted ZIP:
+- mipmap-mdpi
+- mipmap-hdpi
+- mipmap-xhdpi
+- mipmap-xxhdpi
+- mipmap-xxxhdpi
+- mipmap-anydpi-v26 (if present)
+
+TO THIS LOCATION:
+C:\Users\ksair\Downloads\cursor project prime flex(main prime flex)\project-bolt-github-uarm9gkh\flex-zen-coach\android\app\src\main\res\
+
+Replace existing folders when asked!
+
+
+STEP 7: Rebuild APK with New Icon
+----------------------------------
+1. Go back to your project folder
+2. Double-click: build-apk-simple.bat
+3. Wait 5-10 minutes for build to complete
+4. New APK with new icon will be in Downloads folder!
+
+
+STEP 8: Install on Phone
+----------------------------------
+1. Send PrimeFlex.apk to your phone (WhatsApp, Drive, etc.)
+2. Install it
+3. Your new logo will appear on home screen!
+
+
+========================================
+  THAT'S IT! 
+========================================
+
+Questions? Check these files:
+- REPLACE_APP_ICON_GUIDE.md (detailed guide)
+- ICON_REPLACEMENT_QUICK_START.md (quick reference)

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Nutrition Tracking</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #0f0; }
+        button { padding: 10px 20px; margin: 10px; background: #0f0; color: #000; border: none; cursor: pointer; }
+        .log { background: #000; padding: 10px; margin: 10px 0; border-left: 3px solid #0f0; }
+        .error { border-left-color: #f00; color: #f00; }
+        .success { border-left-color: #0f0; color: #0f0; }
+        .info { border-left-color: #00f; color: #00f; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Nutrition Tracking Test</h1>
+    
+    <div>
+        <button onclick="testConnection()">1. Test Connection</button>
+        <button onclick="testTableExists()">2. Check Table</button>
+        <button onclick="testInsert()">3. Test Insert</button>
+        <button onclick="testQuery()">4. Test Query</button>
+        <button onclick="clearLogs()">Clear Logs</button>
+    </div>
+
+    <div id="logs"></div>
+
+    <script>
+        // Replace with your Supabase credentials
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            document.getElementById('logs').appendChild(div);
+            console.log(message);
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+
+        async function testConnection() {
+            log('Testing Supabase connection...', 'info');
+            try {
+                const { data, error } = await supabase.auth.getSession();
+                if (error) throw error;
+                log('✅ Connection successful!', 'success');
+                log(`User: ${data.session?.user?.email || 'Not logged in'}`, 'info');
+            } catch (error) {
+                log(`❌ Connection failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testTableExists() {
+            log('Checking if meal_completions table exists...', 'info');
+            try {
+                const { data, error } = await supabase
+                    .from('meal_completions')
+                    .select('count')
+                    .limit(1);
+                
+                if (error) throw error;
+                log('✅ Table exists!', 'success');
+            } catch (error) {
+                log(`❌ Table check failed: ${error.message}`, 'error');
+                log('Run the SQL from create-meal-completions-table.sql', 'error');
+            }
+        }
+
+        async function testInsert() {
+            log('Testing insert...', 'info');
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    log('❌ Please log in first', 'error');
+                    return;
+                }
+
+                const testMeal = {
+                    user_id: user.id,
+                    day: 'Tuesday',
+                    meal_name: 'Breakfast-0',
+                    food_name: 'Test Meal',
+                    calories: 300,
+                    protein: 20,
+                    carbs: 30,
+                    fats: 10,
+                    completed: true,
+                    completion_date: new Date().toISOString().split('T')[0]
+                };
+
+                log(`Inserting: ${JSON.stringify(testMeal, null, 2)}`, 'info');
+
+                const { data, error } = await supabase
+                    .from('meal_completions')
+                    .upsert(testMeal)
+                    .select();
+
+                if (error) throw error;
+                log('✅ Insert successful!', 'success');
+                log(`Data: ${JSON.stringify(data, null, 2)}`, 'success');
+            } catch (error) {
+                log(`❌ Insert failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testQuery() {
+            log('Testing query...', 'info');
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    log('❌ Please log in first', 'error');
+                    return;
+                }
+
+                const today = new Date().toISOString().split('T')[0];
+                log(`Querying for user: ${user.id}, date: ${today}`, 'info');
+
+                const { data, error } = await supabase
+                    .from('meal_completions')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .eq('completion_date', today)
+                    .eq('completed', true);
+
+                if (error) throw error;
+                log(`✅ Query successful! Found ${data.length} meals`, 'success');
+                
+                if (data.length > 0) {
+                    const totalCal = data.reduce((sum, m) => sum + m.calories, 0);
+                    const totalPro = data.reduce((sum, m) => sum + m.protein, 0);
+                    const totalCarbs = data.reduce((sum, m) => sum + m.carbs, 0);
+                    const totalFats = data.reduce((sum, m) => sum + m.fats, 0);
+                    
+                    log(`📊 Totals: ${totalCal} cal, ${totalPro}g protein, ${totalCarbs}g carbs, ${totalFats}g fats`, 'success');
+                    log(`Data: ${JSON.stringify(data, null, 2)}`, 'info');
+                } else {
+                    log('No meals found for today', 'info');
+                }
+            } catch (error) {
+                log(`❌ Query failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-test on load
+        window.onload = () => {
+            log('🚀 Test page loaded. Click buttons to test.', 'info');
+            log('⚠️ Update SUPABASE_URL and SUPABASE_ANON_KEY in the script first!', 'error');
+        };
+    </script>
+</body>
+</html>

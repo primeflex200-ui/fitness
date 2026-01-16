@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto RLS Fix - Flex Zen Coach</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8fafc;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin: 8px 0;
+        }
+        .success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+        .error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+        .warning { background: #fffbeb; color: #92400e; border: 1px solid #fed7aa; }
+        .info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 8px 4px;
+        }
+        button:hover { background: #2563eb; }
+        button:disabled { background: #9ca3af; cursor: not-allowed; }
+        .sql-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 12px 0;
+        }
+        .step {
+            background: #f1f5f9;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 8px 0;
+            border-left: 4px solid #3b82f6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Auto RLS Fix Tool</h1>
+        <p>This tool will automatically fix the Row Level Security (RLS) issues causing "row cancellation" errors in your Flex Zen Coach app.</p>
+        
+        <div class="step">
+            <h3>📋 Step 1: Get Your Service Role Key</h3>
+            <ol>
+                <li>Go to your <a href="https://supabase.com/dashboard" target="_blank">Supabase Dashboard</a></li>
+                <li>Navigate to <strong>Project Settings</strong> → <strong>API</strong></li>
+                <li>Copy the <strong>service_role</strong> key (it's a long secret key)</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h3>🔑 Step 2: Enter Your Details</h3>
+            <div style="display: grid; gap: 12px;">
+                <div>
+                    <label>Supabase URL:</label>
+                    <input type="text" id="supabaseUrl" placeholder="https://your-project.supabase.co" 
+                           style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;">
+                </div>
+                <div>
+                    <label>Service Role Key:</label>
+                    <input type="password" id="serviceKey" placeholder="service_role key from Supabase Dashboard" 
+                           style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;">
+                </div>
+            </div>
+        </div>
+
+        <div class="step">
+            <h3>🚀 Step 3: Auto Fix</h3>
+            <button onclick="autoFixRLS()" id="fixBtn">🔧 Auto Fix RLS Issues</button>
+            <button onclick="testFix()" id="testBtn" disabled>🧪 Test Fix</button>
+        </div>
+
+        <div id="status"></div>
+
+        <div class="step">
+            <h3>📝 Manual SQL (if auto-fix doesn't work)</h3>
+            <p>Copy this SQL and run it in your Supabase SQL Editor:</p>
+            <div class="sql-block">
+-- DISABLE RLS on all tables
+ALTER TABLE public.trainer_videos DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.feedback DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.community_messages DISABLE ROW LEVEL SECURITY;
+
+-- Grant permissions
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.trainer_videos TO anon, authenticated, public;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.feedback TO anon, authenticated, public;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.community_messages TO anon, authenticated, public;
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let supabase = null;
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            const statusClass = type === 'success' ? 'success' : 
+                               type === 'error' ? 'error' : 
+                               type === 'warning' ? 'warning' : 'info';
+            
+            statusDiv.innerHTML = `<div class="status ${statusClass}">${message}</div>`;
+        }
+
+        function initializeSupabase() {
+            const url = document.getElementById('supabaseUrl').value.trim();
+            const key = document.getElementById('serviceKey').value.trim();
+
+            if (!url || !key) {
+                showStatus('❌ Please enter both Supabase URL and Service Role Key', 'error');
+                return false;
+            }
+
+            try {
+                supabase = createClient(url, key);
+                showStatus('✅ Supabase client initialized', 'success');
+                return true;
+            } catch (error) {
+                showStatus(`❌ Failed to initialize Supabase: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function executeSQL(sql) {
+            try {
+                // Try using direct SQL execution
+                const { data, error } = await supabase.rpc('exec_sql', { sql });
+                
+                if (error) {
+                    // Fallback: try using the REST API directly
+                    const response = await fetch(`${supabase.supabaseUrl}/rest/v1/rpc/exec_sql`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${supabase.supabaseKey}`,
+                            'Content-Type': 'application/json',
+                            'apikey': supabase.supabaseKey
+                        },
+                        body: JSON.stringify({ sql })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    return await response.json();
+                }
+                
+                return data;
+            } catch (error) {
+                console.error('SQL execution error:', error);
+                throw error;
+            }
+        }
+
+        async function autoFixRLS() {
+            if (!initializeSupabase()) return;
+
+            const fixBtn = document.getElementById('fixBtn');
+            const testBtn = document.getElementById('testBtn');
+            
+            fixBtn.disabled = true;
+            fixBtn.textContent = '🔄 Fixing...';
+            showStatus('🔧 Starting RLS fix process...', 'info');
+
+            const tables = ['trainer_videos', 'feedback', 'community_messages'];
+            let successCount = 0;
+
+            for (const table of tables) {
+                try {
+                    showStatus(`📋 Processing table: ${table}`, 'info');
+                    
+                    // Disable RLS
+                    const disableSQL = `ALTER TABLE public.${table} DISABLE ROW LEVEL SECURITY;`;
+                    
+                    try {
+                        await executeSQL(disableSQL);
+                        showStatus(`✅ RLS disabled on ${table}`, 'success');
+                        successCount++;
+                    } catch (error) {
+                        showStatus(`⚠️ Could not disable RLS on ${table}: ${error.message}`, 'warning');
+                    }
+                    
+                    // Grant permissions
+                    const grantSQL = `
+                        GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.${table} TO anon, authenticated, public;
+                    `;
+                    
+                    try {
+                        await executeSQL(grantSQL);
+                        showStatus(`✅ Permissions granted on ${table}`, 'success');
+                    } catch (error) {
+                        showStatus(`⚠️ Could not grant permissions on ${table}: ${error.message}`, 'warning');
+                    }
+                    
+                } catch (error) {
+                    showStatus(`❌ Error processing ${table}: ${error.message}`, 'error');
+                }
+            }
+
+            if (successCount > 0) {
+                showStatus(`🎉 RLS fix completed! ${successCount}/${tables.length} tables processed successfully.`, 'success');
+                testBtn.disabled = false;
+            } else {
+                showStatus('⚠️ Auto-fix had issues. Please use the manual SQL above.', 'warning');
+                testBtn.disabled = false;
+            }
+
+            fixBtn.disabled = false;
+            fixBtn.textContent = '🔧 Auto Fix RLS Issues';
+        }
+
+        async function testFix() {
+            if (!supabase) {
+                showStatus('❌ Please initialize Supabase first', 'error');
+                return;
+            }
+
+            const testBtn = document.getElementById('testBtn');
+            testBtn.disabled = true;
+            testBtn.textContent = '🧪 Testing...';
+            
+            showStatus('🧪 Testing feedback insertion...', 'info');
+
+            try {
+                const { error } = await supabase
+                    .from('feedback')
+                    .insert({
+                        user_id: 'test-user-id',
+                        message: 'Test message - RLS fix verification'
+                    });
+
+                if (error) {
+                    showStatus(`❌ Test failed: ${error.message}`, 'error');
+                    showStatus('The RLS fix may not have worked. Please try the manual SQL.', 'error');
+                } else {
+                    showStatus('✅ Test passed! Feedback insertion works correctly.', 'success');
+                    
+                    // Clean up test data
+                    await supabase
+                        .from('feedback')
+                        .delete()
+                        .eq('message', 'Test message - RLS fix verification');
+                    
+                    showStatus('🧹 Test data cleaned up successfully.', 'info');
+                    showStatus('🎉 Your app should now work without row cancellation errors!', 'success');
+                }
+            } catch (error) {
+                showStatus(`❌ Test failed: ${error.message}`, 'error');
+            }
+
+            testBtn.disabled = false;
+            testBtn.textContent = '🧪 Test Fix';
+        }
+    </script>
+</body>
+</html>

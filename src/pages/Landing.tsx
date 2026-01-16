@@ -1,110 +1,106 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Dumbbell, Trophy, Target, TrendingUp, User, Menu } from "lucide-react";
-import heroGym from "@/assets/hero-gym.jpg";
+import PrimeFlexLogo from "@/components/PrimeFlexLogo";
+import { useAuth } from "@/hooks/useAuth";
 
 const Landing = () => {
+  const navigate = useNavigate();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    // If user is already logged in, redirect to dashboard
+    if (user && !loading) {
+      navigate("/dashboard");
+    }
+  }, [user, loading, navigate]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-black">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-black relative overflow-hidden">
+
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="container mx-auto flex items-center justify-between h-16 px-4">
-          <div className="flex items-center gap-2">
-            <Dumbbell className="w-6 h-6 text-primary" />
-            <span className="text-xl font-bold text-gradient-gold">PRIME FLEX</span>
-          </div>
-          <div className="hidden md:flex items-center gap-6">
-            <Link to="/auth" className="text-muted-foreground hover:text-primary transition-colors">
-              Sign In
+      <nav className="relative z-50 bg-transparent">
+        <div className="container mx-auto flex items-center justify-between h-16 px-6">
+          <PrimeFlexLogo showText size="md" />
+          <div className="flex items-center gap-4">
+            <Link to="/auth">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="text-white hover:text-yellow-500 hover:bg-transparent"
+              >
+                Sign In
+              </Button>
             </Link>
             <Link to="/auth">
-              <Button variant="hero" size="sm">Get Started</Button>
+              <Button 
+                size="sm"
+                className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-6"
+              >
+                Get Started
+              </Button>
             </Link>
           </div>
-          <button className="md:hidden">
-            <Menu className="w-6 h-6 text-foreground" />
-          </button>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center pt-16 overflow-hidden">
-        <div 
-          className="absolute inset-0 bg-cover bg-center opacity-30"
-          style={{ backgroundImage: `url(${heroGym})` }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-background via-background/80 to-background" />
-        
-        <div className="relative z-10 container mx-auto px-4 py-20 text-center animate-fade-in">
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 text-gradient-gold leading-tight tracking-tight">
+      <section className="relative z-10 flex items-center justify-center min-h-[calc(100vh-4rem)] px-4">
+        <div className="text-center max-w-4xl mx-auto">
+          {/* Main Title */}
+          <h1 
+            className="text-6xl md:text-8xl lg:text-9xl font-black mb-8 tracking-tight"
+            style={{
+              background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FFD700 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              textTransform: 'uppercase',
+              letterSpacing: '-0.02em',
+              fontFamily: 'system-ui, -apple-system, sans-serif'
+            }}
+          >
             PRIME FLEX
           </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+
+          {/* Subtitle */}
+          <p className="text-xl md:text-2xl text-gray-300 mb-12 max-w-2xl mx-auto leading-relaxed">
             Transform your body, elevate your mind. Premium fitness guidance at your fingertips.
           </p>
+
+          {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link to="/auth">
-              <Button variant="hero" size="lg" className="w-full sm:w-auto">
+              <Button 
+                size="lg"
+                className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold px-8 py-6 text-lg w-full sm:w-auto"
+              >
                 Start Your Journey
               </Button>
             </Link>
             <Link to="/auth">
-              <Button variant="premium" size="lg" className="w-full sm:w-auto">
+              <Button 
+                size="lg"
+                variant="outline"
+                className="border-2 border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black font-bold px-8 py-6 text-lg w-full sm:w-auto"
+              >
                 Explore Features
               </Button>
             </Link>
           </div>
         </div>
       </section>
-
-      {/* Features Grid */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-gradient-gold">
-            Everything You Need to Excel
-          </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { icon: Target, title: "Custom Workouts", desc: "Tailored plans for every fitness level" },
-              { icon: Trophy, title: "Diet Guidance", desc: "Nutrition plans that fuel your goals" },
-              { icon: TrendingUp, title: "Track Progress", desc: "Monitor strength & body metrics" },
-              { icon: User, title: "Expert Trainers", desc: "Learn from certified professionals" }
-            ].map((feature, i) => (
-              <div 
-                key={i}
-                className="bg-card border border-border rounded-lg p-6 hover-scale hover:border-primary transition-all animate-fade-in"
-                style={{ animationDelay: `${i * 0.1}s` }}
-              >
-                <feature.icon className="w-12 h-12 text-primary mb-4" />
-                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                <p className="text-muted-foreground">{feature.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 px-4 bg-card/50">
-        <div className="container mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Transform?</h2>
-          <p className="text-muted-foreground mb-8 text-lg max-w-xl mx-auto">
-            Join thousands achieving their fitness goals with PRIME FLEX
-          </p>
-          <Link to="/auth">
-            <Button variant="hero" size="lg">
-              Start Free Today
-            </Button>
-          </Link>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-border py-8 px-4">
-        <div className="container mx-auto text-center text-muted-foreground">
-          <p>&copy; 2025 PRIME FLEX. All rights reserved.</p>
-        </div>
-      </footer>
     </div>
   );
 };

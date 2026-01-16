@@ -23,3 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Sensitive files with API keys
+test-openai-key.js
+src/services/smsService.ts

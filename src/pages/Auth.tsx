@@ -1,15 +1,22 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dumbbell, Mail, Lock, User as UserIcon, Activity } from "lucide-react";
+import { Mail, Lock, User as UserIcon, Activity, Phone, ArrowLeft } from "lucide-react";
+import PrimeFlexLogo from "@/components/PrimeFlexLogo";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
+import FloatingLines from "@/components/FloatingLines";
+import GlassSurface from "@/components/GlassSurface";
+import { googleAuthService } from "@/services/googleAuthService";
+import './AuthFlip.css';
+import './AuthOptimized.css';
 
 const passwordSchema = z.string()
   .min(8, "Password must be at least 8 characters")
@@ -22,6 +29,9 @@ const signupSchema = z.object({
   email: z.string().email("Invalid email address").max(255),
   password: passwordSchema,
   full_name: z.string().trim().min(1, "Name is required").max(100),
+  phone_number: z.string().optional().refine((val) => !val || /^[+]?[\d\s-]{10,15}$/.test(val), {
+    message: "Please enter a valid phone number"
+  }),
   age: z.string().refine((val) => !isNaN(parseInt(val)) && parseInt(val) >= 13 && parseInt(val) <= 120, {
     message: "Age must be between 13 and 120"
   }),
@@ -53,6 +63,7 @@ const Auth = () => {
     email: "",
     password: "",
     full_name: "",
+    phone_number: "",
     age: "",
     gender: "",
     height: "",
@@ -60,83 +71,217 @@ const Auth = () => {
     fitness_goal: "",
     diet_type: ""
   });
+  const [showResendLink, setShowResendLink] = useState(false);
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
 
+  const { user, loading: authLoading } = useAuth();
+  
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate("/dashboard");
-      }
-    });
+    // If user is already logged in, redirect to dashboard
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        navigate("/dashboard");
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading authentication...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
-    const { error, data } = await supabase.auth.signInWithPassword({
-      email: loginEmail,
-      password: loginPassword,
-    });
-
-    if (error) {
-      toast.error(error.message);
-      setIsLoading(false);
+    // Basic validation
+    if (!loginEmail || !loginPassword) {
+      toast.error("Please enter both email and password");
       return;
     }
+    
+    setIsLoading(true);
+    try {
+      const { error, data } = await supabase.auth.signInWithPassword({
+        email: loginEmail.trim(),
+        password: loginPassword,
+      });
 
-    // Update profile with body details if provided
-    if (data.user) {
-      const updateData: any = {};
+      if (error) {
+        let errorMessage = error.message;
+        const msgLower = error.message.toLowerCase();
+        
+        if (msgLower.includes("email not confirmed") || msgLower.includes("email not verified")) {
+          setShowResendLink(true);
+          errorMessage = "Please verify your email before logging in. Check your inbox for the verification link.";
+        } else if (msgLower.includes("invalid login credentials")) {
+          errorMessage = "Invalid email or password. Please try again.";
+        }
+        
+        toast.error(errorMessage);
+        setIsLoading(false);
+        return;
+      }
+
+      // Only update profile with body details if user explicitly provided new values
+      // This prevents overwriting existing saved data
+      if (data.user) {
+        const updateData: {
+          age?: number;
+          height?: number;
+          weight?: number;
+          gender?: string;
+          fitness_goal?: string;
+          diet_type?: string;
+        } = {};
+        
+        // Only add fields that user explicitly filled in during this login
+        if (loginDetails.age && loginDetails.age.trim() !== '') {
+          const age = parseInt(loginDetails.age);
+          if (age >= 13 && age <= 120) {
+            updateData.age = age;
+          }
+        }
+        if (loginDetails.height && loginDetails.height.trim() !== '') {
+          const height = parseFloat(loginDetails.height);
+          if (height >= 50 && height <= 300) {
+            updateData.height = height;
+          }
+        }
+        if (loginDetails.weight && loginDetails.weight.trim() !== '') {
+          const weight = parseFloat(loginDetails.weight);
+          if (weight >= 20 && weight <= 500) {
+            updateData.weight = weight;
+          }
+        }
+        if (loginDetails.gender && loginDetails.gender.trim() !== '') {
+          updateData.gender = loginDetails.gender;
+        }
+        if (loginDetails.fitness_goal && loginDetails.fitness_goal.trim() !== '') {
+          updateData.fitness_goal = loginDetails.fitness_goal;
+        }
+        if (loginDetails.diet_type && loginDetails.diet_type.trim() !== '') {
+          updateData.diet_type = loginDetails.diet_type;
+        }
+
+        // Only update if user provided new values - don't overwrite existing data
+        if (Object.keys(updateData).length > 0) {
+          console.log("Updating profile with new values:", updateData);
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update(updateData)
+            .eq('id', data.user.id);
+
+          if (profileError) {
+            console.error("Profile update error:", profileError);
+          } else {
+            toast.success("Welcome back! Profile updated.");
+          }
+        }
+      }
+
+      // Save session to persistent storage
+      const { sessionManager } = await import('@/lib/sessionManager');
+      await sessionManager.saveSession();
       
-      if (loginDetails.age) {
-        const age = parseInt(loginDetails.age);
-        if (age >= 13 && age <= 120) {
-          updateData.age = age;
-        }
+      toast.success("Welcome back!");
+      setIsLoading(false);
+      
+      // Navigate to dashboard after successful login
+      navigate("/dashboard");
+    } catch (err: any) {
+      const msg = String(err?.message || err);
+      if (msg.toLowerCase().includes("failed to fetch")) {
+        toast.error("Failed to reach Supabase. Check internet, .env values, and allowed URLs.");
+      } else {
+        toast.error("Sign-in error. Please try again.");
       }
-      if (loginDetails.height) {
-        const height = parseFloat(loginDetails.height);
-        if (height >= 50 && height <= 300) {
-          updateData.height = height;
-        }
-      }
-      if (loginDetails.weight) {
-        const weight = parseFloat(loginDetails.weight);
-        if (weight >= 20 && weight <= 500) {
-          updateData.weight = weight;
-        }
-      }
-      if (loginDetails.gender) updateData.gender = loginDetails.gender;
-      if (loginDetails.fitness_goal) updateData.fitness_goal = loginDetails.fitness_goal;
-      if (loginDetails.diet_type) updateData.diet_type = loginDetails.diet_type;
-
-      // Only update if there are fields to update
-      if (Object.keys(updateData).length > 0) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update(updateData)
-          .eq('id', data.user.id);
-
-        if (profileError) {
-          console.error("Profile update error:", profileError);
-        } else {
-          toast.success("Welcome back! Profile updated.");
-          setIsLoading(false);
-          return;
-        }
-      }
+      console.error("Login error:", err);
+      setIsLoading(false);
     }
+  };
+  
+  const handleResendVerification = async () => {
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: loginEmail,
+        options: { emailRedirectTo: `${window.location.origin}/` }
+      });
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success("Verification email sent. Please check your inbox.");
+      }
+    } catch (err: any) {
+      toast.error("Could not resend verification. Try again later.");
+      console.error("Resend verification error:", err);
+    }
+  };
 
-    toast.success("Welcome back!");
-    setIsLoading(false);
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await googleAuthService.signIn();
+      
+      if (error) {
+        console.error("Google sign-in error:", error);
+        toast.error("Google sign-in failed. Please try again.", {
+          duration: 4000,
+          description: error.message || "Please try again"
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (data?.user) {
+        // Save session to persistent storage
+        const { sessionManager } = await import('@/lib/sessionManager');
+        await sessionManager.saveSession();
+        
+        toast.success("Welcome! Signed in with Google.");
+        navigate("/dashboard");
+      }
+    } catch (err: any) {
+      console.error("Google login error:", err);
+      toast.error("Google Sign-In unavailable. Use Email/Password instead.", {
+        duration: 4000,
+        description: "OAuth credentials need to be configured"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (adminEmail !== "primeflex200@gmail.com" || adminPassword !== "Primeflex@2025") {
+      toast.error("Invalid admin credentials");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: adminEmail,
+        password: adminPassword,
+      });
+      if (error) {
+        toast.error(error.message);
+        setIsLoading(false);
+        return;
+      }
+      toast.success("Welcome, Admin!");
+      navigate("/admin");
+    } catch (err: any) {
+      toast.error("Admin sign-in failed.");
+      console.error("Admin login error:", err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -152,63 +297,110 @@ const Auth = () => {
       return;
     }
     
-    const { error: signupError, data } = await supabase.auth.signUp({
-      email: signupData.email,
-      password: signupData.password,
-      options: {
-        data: {
-          full_name: signupData.full_name,
+    try {
+      const { error: signupError, data } = await supabase.auth.signUp({
+        email: signupData.email,
+        password: signupData.password,
+        options: {
+          data: {
+            full_name: signupData.full_name,
+          },
+          emailRedirectTo: `${window.location.origin}/`,
         },
-        emailRedirectTo: `${window.location.origin}/`,
-      },
-    });
+      });
 
-    if (signupError) {
-      toast.error(signupError.message);
-      setIsLoading(false);
-      return;
-    }
+      if (signupError) {
+        toast.error(signupError.message);
+        setIsLoading(false);
+        return;
+      }
 
-    // Update profile with additional data
-    if (data.user) {
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
+      // Update profile with additional data
+      if (data.user) {
+        const profileUpdate: Record<string, any> = {
           age: parseInt(signupData.age),
           gender: signupData.gender,
           height: parseFloat(signupData.height),
           weight: parseFloat(signupData.weight),
           fitness_goal: signupData.fitness_goal,
           diet_type: signupData.diet_type
-        })
-        .eq('id', data.user.id);
+        };
+        
+        // Add phone number if provided
+        if (signupData.phone_number) {
+          profileUpdate.phone_number = signupData.phone_number;
+        }
 
-      if (profileError) {
-        console.error("Profile update error:", profileError);
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update(profileUpdate)
+          .eq('id', data.user.id);
+
+        if (profileError) {
+          console.error("Profile update error:", profileError);
+        }
       }
-    }
 
-    toast.success("Account created! Welcome to PRIME FLEX");
-    setIsLoading(false);
+      toast.success("Account created! Welcome to PRIME FLEX");
+      setIsLoading(false);
+      
+      // Navigate to dashboard after successful signup
+      navigate("/dashboard");
+    } catch (err: any) {
+      const msg = String(err?.message || err);
+      if (msg.toLowerCase().includes("failed to fetch")) {
+        toast.error("Failed to reach Supabase. Check internet, .env values, and allowed URLs.");
+      } else {
+        toast.error("Sign-up error. Please try again.");
+      }
+      console.error("Signup error:", err);
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-      <div className="w-full max-w-2xl animate-fade-in">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background relative auth-container" style={{ 
+      overflowY: 'auto',
+      overflowX: 'hidden',
+      WebkitOverflowScrolling: 'touch'
+    }}>
+      {/* FloatingLines Background - Temporarily disabled for performance */}
+      {/* <FloatingLines
+        enabledWaves={['top', 'middle', 'bottom']}
+        lineCount={[4, 7, 10]}
+        lineDistance={[12, 10, 8]}
+        bendRadius={3.0}
+        bendStrength={-0.8}
+        interactive={true}
+        parallax={true}
+        animationSpeed={0.7}
+        linesGradient={['#c030d5', '#1f3a82', '#0d0d1a']}
+        mixBlendMode="screen"
+      /> */}
+      
+      <div className="w-full max-w-2xl animate-fade-in relative z-10">
+        {/* Back Button - White Color */}
+        <Link 
+          to="/" 
+          className="inline-flex items-center gap-2 text-white hover:text-yellow-500 transition-colors mb-6 font-medium"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span>Back to Home</span>
+        </Link>
+        
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 mb-4">
-            <Dumbbell className="w-8 h-8 text-primary" />
-            <span className="text-2xl font-bold text-gradient-gold">PRIME FLEX</span>
+          <Link to="/" className="inline-flex items-center justify-center gap-2 mb-4">
+            <PrimeFlexLogo showText size="lg" />
           </Link>
           <p className="text-muted-foreground">Your fitness journey starts here</p>
         </div>
 
         <Card className="border-border">
-          <CardHeader>
-            <CardTitle>Welcome</CardTitle>
-            <CardDescription>Sign in or create your account</CardDescription>
-          </CardHeader>
-          <CardContent>
+            <CardHeader>
+              <CardTitle>Welcome</CardTitle>
+              <CardDescription>Sign in or create your account</CardDescription>
+            </CardHeader>
+            <CardContent>
             <Tabs defaultValue="login" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-4">
                 <TabsTrigger value="login">Login</TabsTrigger>
@@ -247,6 +439,19 @@ const Auth = () => {
                       />
                     </div>
                   </div>
+                  
+                  {showResendLink && (
+                    <div className="text-sm text-muted-foreground">
+                      Email not confirmed.{" "}
+                      <button
+                        type="button"
+                        onClick={handleResendVerification}
+                        className="text-primary underline underline-offset-4"
+                      >
+                        Resend verification email
+                      </button>
+                    </div>
+                  )}
 
                   <div className="pt-3 border-t border-border">
                     <div className="flex items-center gap-2 mb-3">
@@ -338,6 +543,45 @@ const Auth = () => {
                   <Button type="submit" variant="hero" className="w-full" disabled={isLoading}>
                     {isLoading ? "Signing in..." : "Sign In"}
                   </Button>
+
+                  <div className="relative my-6">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">
+                        Or continue with
+                      </span>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleGoogleLogin}
+                    disabled={isLoading}
+                  >
+                    <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+                      <path
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                        fill="#4285F4"
+                      />
+                      <path
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                        fill="#34A853"
+                      />
+                      <path
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                        fill="#FBBC05"
+                      />
+                      <path
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                        fill="#EA4335"
+                      />
+                    </svg>
+                    Continue with Google
+                  </Button>
                 </form>
               </TabsContent>
 
@@ -391,6 +635,24 @@ const Auth = () => {
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Must be 8+ characters with uppercase, lowercase, number, and special character
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-phone">Phone Number (for reminders)</Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="signup-phone" 
+                        type="tel" 
+                        placeholder="+91 9876543210"
+                        className="pl-10"
+                        value={signupData.phone_number}
+                        onChange={(e) => setSignupData({...signupData, phone_number: e.target.value})}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Optional - Used for water & workout SMS reminders
                     </p>
                   </div>
 
@@ -477,9 +739,75 @@ const Auth = () => {
                   <Button type="submit" variant="hero" className="w-full" disabled={isLoading}>
                     {isLoading ? "Creating account..." : "Create Account"}
                   </Button>
+
+                  <div className="relative my-6">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">
+                        Or continue with
+                      </span>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleGoogleLogin}
+                    disabled={isLoading}
+                  >
+                    <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+                      <path
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                        fill="#4285F4"
+                      />
+                      <path
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                        fill="#34A853"
+                      />
+                      <path
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                        fill="#FBBC05"
+                      />
+                      <path
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                        fill="#EA4335"
+                      />
+                    </svg>
+                    Continue with Google
+                  </Button>
                 </form>
               </TabsContent>
             </Tabs>
+
+            {/* Admin Access */}
+            <div className="mt-6 pt-4 border-t border-border">
+              <p className="text-sm font-semibold mb-3">Admin Panel Access</p>
+              <form onSubmit={handleAdminLogin} className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <Input
+                  type="email"
+                  placeholder="Admin email"
+                  value={adminEmail}
+                  onChange={(e) => setAdminEmail(e.target.value)}
+                  required
+                />
+                <Input
+                  type="password"
+                  placeholder="Admin password"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  required
+                />
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? "Signing in..." : "Open Admin Panel"}
+                </Button>
+              </form>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Use your assigned admin credentials to access trainer controls.
+              </p>
+            </div>
 
           </CardContent>
         </Card>

@@ -8,10 +8,23 @@ import { ArrowLeft, Zap, TrendingUp, AlertCircle, Info, Target } from "lucide-re
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import ExerciseVideoPlayer from "@/components/ExerciseVideoPlayer";
 
 const Calisthenics = () => {
   const { user } = useAuth();
+  const [manualUser, setManualUser] = useState<any>(null);
   const [completions, setCompletions] = useState<Record<string, boolean>>({});
+
+  // Manual session check on mount
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setManualUser(session.user);
+      }
+    };
+    checkSession();
+  }, []);
 
   const exercises = [
     {
@@ -113,19 +126,21 @@ const Calisthenics = () => {
   ];
 
   useEffect(() => {
-    if (user) {
+    const currentUser = user || manualUser;
+    if (currentUser) {
       fetchCompletions();
     }
-  }, [user]);
+  }, [user, manualUser]);
 
   const fetchCompletions = async () => {
-    if (!user) return;
+    const currentUser = user || manualUser;
+    if (!currentUser) return;
 
     const today = new Date().toISOString().split('T')[0];
     const { data } = await supabase
       .from('workout_completions')
       .select('exercise_name, completed')
-      .eq('user_id', user.id)
+      .eq('user_id', currentUser.id)
       .eq('workout_date', today)
       .eq('workout_type', 'calisthenics');
 
@@ -139,7 +154,8 @@ const Calisthenics = () => {
   };
 
   const toggleCompletion = async (exerciseName: string) => {
-    if (!user) {
+    const currentUser = user || manualUser;
+    if (!currentUser) {
       toast.error("Please log in to track progress");
       return;
     }
@@ -147,10 +163,10 @@ const Calisthenics = () => {
     const newStatus = !completions[exerciseName];
     const today = new Date().toISOString().split('T')[0];
 
-    const { error } = await supabase
+    const { error} = await supabase
       .from('workout_completions')
       .upsert({
-        user_id: user.id,
+        user_id: currentUser.id,
         workout_date: today,
         workout_type: 'calisthenics',
         exercise_name: exerciseName,
@@ -253,11 +269,16 @@ const Calisthenics = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <Checkbox
+                        id={`calisthenics-${i}`}
                         checked={completions[exercise.name] || false}
-                        onCheckedChange={() => toggleCompletion(exercise.name)}
-                        className="w-6 h-6"
+                        onCheckedChange={(checked) => toggleCompletion(exercise.name)}
+                        className="w-6 h-6 cursor-pointer"
                       />
                       <CardTitle className="text-xl">{exercise.name}</CardTitle>
+                      <ExerciseVideoPlayer
+                        title={exercise.name}
+                        buttonClassName="h-8 w-8"
+                      />
                     </div>
                     <CardDescription>{exercise.description}</CardDescription>
                   </div>
