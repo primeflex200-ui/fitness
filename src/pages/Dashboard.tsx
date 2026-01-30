@@ -294,7 +294,7 @@ const Dashboard = () => {
                   <div className="p-6 flex flex-col h-full">
                     <div className="flex items-start gap-4 mb-4">
                       <div className="premium-icon-container flex-shrink-0">
-                        <feature.icon className="w-8 h-8 text-white" />
+                        <feature.icon className="w-8 h-8 text-yellow-700" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="text-xl font-bold text-black mb-2 group-hover:text-primary transition-colors">
@@ -342,7 +342,7 @@ const Dashboard = () => {
           >
             <div className="p-8 text-center">
               <div className="premium-icon-container mx-auto mb-6">
-                <Brain className="w-10 h-10 text-white" />
+                <Brain className="w-10 h-10 text-yellow-700" />
               </div>
               <h3 className="text-2xl font-bold mb-3 text-black">Ready for Today's Workout?</h3>
               <p className="text-gray-700 mb-6 text-lg">Let's crush your goals together and build the best version of yourself</p>
