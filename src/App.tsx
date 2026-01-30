@@ -51,6 +51,9 @@ import { ReminderInitializer } from "./components/ReminderInitializer";
 import { NotificationPermissionHandler } from "./components/NotificationPermissionHandler";
 // GlobalCardioTimer removed - using system notifications only
 
+// Import scroll fix
+import "./utils/scrollFix";
+
 const queryClient = new QueryClient();
 
 // Component to handle back button
@@ -127,6 +130,26 @@ const App = () => {
     sessionStorage.setItem('hasSeenSplash', 'true');
     setShowSplash(false);
   };
+
+  // Force enable scrolling on app start
+  useEffect(() => {
+    const enableScrolling = () => {
+      document.documentElement.style.overflow = 'auto';
+      document.body.style.overflow = 'auto';
+      document.documentElement.style.height = 'auto';
+      document.body.style.height = 'auto';
+      
+      const root = document.getElementById('root');
+      if (root) {
+        root.style.overflow = 'visible';
+        root.style.height = 'auto';
+      }
+    };
+    
+    enableScrolling();
+    // Re-enable after a short delay
+    setTimeout(enableScrolling, 1000);
+  }, []);
 
   // Show splash screen on first load
   if (showSplash && isFirstLoad) {

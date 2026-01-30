@@ -96,42 +96,54 @@ All colors MUST be HSL.
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
   }
 
   html {
     scroll-behavior: smooth;
     scroll-padding-top: 4rem;
+    overflow-y: scroll !important;
+    overflow-x: hidden !important;
+    height: 100% !important;
   }
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   #root {
-    min-height: 100vh;
+    min-height: 100vh !important;
+    overflow-y: visible !important;
+    overflow-x: hidden !important;
   }
 
-  /* Force enable scrolling */
-  html, body {
-    overflow: auto !important;
-    height: auto !important;
+  /* FORCE SCROLLING ON ALL CONTAINERS */
+  .min-h-screen, 
+  [data-scroll-container],
+  .container,
+  main,
+  section,
+  div {
+    overflow-y: visible !important;
   }
 
-  /* Ensure mouse wheel events work */
+  /* DISABLE ANY SCROLL BLOCKING */
   * {
-    -webkit-overflow-scrolling: touch;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: auto !important;
   }
 
-  /* Prevent any element from blocking scroll */
-  .min-h-screen {
-    overflow: visible !important;
-  }
-
-  /* Ensure all pages can scroll */
-  [data-scroll-container] {
-    overflow: auto !important;
+  /* ENSURE MOUSE WHEEL WORKS */
+  html, body, #root, .min-h-screen {
+    pointer-events: auto !important;
+    touch-action: auto !important;
   }
 
   .gradient-gold {
@@ -169,6 +181,7 @@ All colors MUST be HSL.
     border-radius: 24px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: visible !important;
   }
 
   .premium-card:hover {
@@ -182,6 +195,7 @@ All colors MUST be HSL.
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     min-height: 180px;
+    overflow: visible !important;
   }
 
   .premium-card-large:hover {
