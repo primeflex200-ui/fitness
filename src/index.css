@@ -98,14 +98,8 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
-  html, body {
-    scroll-behavior: smooth;
-    overflow: auto;
-    height: auto;
-    min-height: 100%;
-  }
-
   html {
+    scroll-behavior: smooth;
     scroll-padding-top: 4rem;
   }
 
@@ -117,12 +111,27 @@ All colors MUST be HSL.
 
   #root {
     min-height: 100vh;
-    overflow: visible;
   }
 
-  /* Ensure all containers allow scrolling */
-  .container, .main, .content {
-    overflow: visible;
+  /* Force enable scrolling */
+  html, body {
+    overflow: auto !important;
+    height: auto !important;
+  }
+
+  /* Ensure mouse wheel events work */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Prevent any element from blocking scroll */
+  .min-h-screen {
+    overflow: visible !important;
+  }
+
+  /* Ensure all pages can scroll */
+  [data-scroll-container] {
+    overflow: auto !important;
   }
 
   .gradient-gold {

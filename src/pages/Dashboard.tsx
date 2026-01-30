@@ -166,12 +166,12 @@ const Dashboard = () => {
     : baseFeatures;
 
   return (
-    <div className="min-h-screen bg-background relative">
+    <div className="min-h-screen bg-background relative" data-scroll-container>
       {/* Gooey Click Effect */}
       {clickedElement && <GooeyEffect targetElement={clickedElement} />}
       
       {/* Light Rays Background */}
-      <div className="fixed inset-0 w-full h-full z-0 pointer-events-none" style={{ willChange: 'transform', transform: 'translateZ(0)' }}>
+      <div className="fixed inset-0 w-full h-full z-0 pointer-events-none">
         <LightRays
           raysOrigin="top-center"
           raysColor="#00ffff"

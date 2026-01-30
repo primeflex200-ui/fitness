@@ -359,7 +359,7 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-background relative auth-container">
+    <div className="min-h-screen flex items-center justify-center p-6 bg-background relative auth-container" data-scroll-container>
       {/* FloatingLines Background - Temporarily disabled for performance */}
       {/* <FloatingLines
         enabledWaves={['top', 'middle', 'bottom']}

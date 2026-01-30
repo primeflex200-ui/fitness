@@ -27,7 +27,7 @@ const Landing = () => {
   }
 
   return (
-    <div className="min-h-screen bg-black relative">
+    <div className="min-h-screen bg-black relative" data-scroll-container>
 
       {/* Navigation */}
       <nav className="relative z-50 bg-transparent">
