@@ -27,7 +27,19 @@ const Landing = () => {
   }
 
   return (
-    <div className="min-h-screen bg-black relative" data-scroll-container>
+    <div 
+      className="min-h-screen relative" 
+      data-scroll-container
+      style={{
+        backgroundImage: 'url(/landing-bg.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundAttachment: 'fixed'
+      }}
+    >
+      {/* Dark overlay for better text readability */}
+      <div className="absolute inset-0 bg-black/40 z-0"></div>
 
       {/* Navigation */}
       <nav className="relative z-50 bg-transparent">
