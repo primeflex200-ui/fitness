@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import LightRays from "@/components/LightRays";
 import GooeyEffect from "@/components/GooeyEffect";
+import GlareHover from "@/components/GlareHover";
 import { 
   Apple, 
   TrendingUp, 
@@ -221,8 +222,26 @@ const Dashboard = () => {
       {/* Hero Section */}
       <section className="py-12 px-6 bg-gradient-to-b from-white/5 to-transparent relative z-10">
         <div className="container mx-auto">
-          <div className="premium-card-large max-w-4xl mx-auto text-center">
-            <div className="p-8">
+          <GlareHover
+            width="100%"
+            height="auto"
+            background="rgba(255, 255, 255, 0.95)"
+            borderRadius="24px"
+            borderColor="rgba(255, 255, 255, 0.2)"
+            glareColor="#FFD700"
+            glareOpacity={0.3}
+            glareAngle={-45}
+            glareSize={400}
+            transitionDuration={1000}
+            className="max-w-4xl mx-auto"
+            style={{
+              background: 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(12px)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              boxShadow: '0 12px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08)'
+            }}
+          >
+            <div className="p-8 text-center">
               <h1 className="text-4xl md:text-5xl font-bold mb-4 premium-text-primary">
                 Welcome Back, <span className="text-gradient-gold">{userName}</span>
               </h1>
@@ -230,7 +249,7 @@ const Dashboard = () => {
                 Ready to crush your fitness goals today? Your personalized dashboard awaits.
               </p>
             </div>
-          </div>
+          </GlareHover>
         </div>
       </section>
 
@@ -252,7 +271,26 @@ const Dashboard = () => {
                 }}
                 className="group"
               >
-                <div className="feature-card premium-card-large cursor-pointer h-full">
+                <GlareHover
+                  width="100%"
+                  height="180px"
+                  background="rgba(255, 255, 255, 0.95)"
+                  borderRadius="24px"
+                  borderColor="rgba(255, 255, 255, 0.2)"
+                  glareColor="#FFD700"
+                  glareOpacity={0.4}
+                  glareAngle={-30}
+                  glareSize={300}
+                  transitionDuration={800}
+                  playOnce={false}
+                  className="feature-card cursor-pointer h-full"
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.95)',
+                    backdropFilter: 'blur(12px)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    boxShadow: '0 12px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08)'
+                  }}
+                >
                   <div className="p-6 flex flex-col h-full">
                     <div className="flex items-start gap-4 mb-4">
                       <div className="premium-icon-container flex-shrink-0">
@@ -273,7 +311,7 @@ const Dashboard = () => {
                       </div>
                     </div>
                   </div>
-                </div>
+                </GlareHover>
               </Link>
             ))}
           </div>
@@ -283,7 +321,25 @@ const Dashboard = () => {
       {/* Quick Action */}
       <section className="py-12 px-6">
         <div className="container mx-auto">
-          <div className="premium-card-large max-w-2xl mx-auto">
+          <GlareHover
+            width="100%"
+            height="auto"
+            background="rgba(255, 255, 255, 0.95)"
+            borderRadius="24px"
+            borderColor="rgba(255, 255, 255, 0.2)"
+            glareColor="#FFD700"
+            glareOpacity={0.4}
+            glareAngle={-60}
+            glareSize={350}
+            transitionDuration={900}
+            className="max-w-2xl mx-auto"
+            style={{
+              background: 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(12px)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              boxShadow: '0 12px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08)'
+            }}
+          >
             <div className="p-8 text-center">
               <div className="premium-icon-container mx-auto mb-6">
                 <Brain className="w-10 h-10 text-white" />
@@ -296,14 +352,32 @@ const Dashboard = () => {
                 </Button>
               </Link>
             </div>
-          </div>
+          </GlareHover>
         </div>
       </section>
 
       {/* Disclaimer Footer */}
       <section className="py-12 px-6 bg-white/5">
         <div className="container mx-auto">
-          <div className="premium-card max-w-4xl mx-auto">
+          <GlareHover
+            width="100%"
+            height="auto"
+            background="rgba(255, 255, 255, 0.95)"
+            borderRadius="20px"
+            borderColor="rgba(255, 255, 255, 0.2)"
+            glareColor="#FFD700"
+            glareOpacity={0.2}
+            glareAngle={-20}
+            glareSize={250}
+            transitionDuration={700}
+            className="max-w-4xl mx-auto"
+            style={{
+              background: 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(12px)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05)'
+            }}
+          >
             <div className="p-8 text-center">
               <h4 className="text-lg font-semibold premium-text-primary mb-4">Important Notice</h4>
               <p className="premium-text-secondary leading-relaxed">
@@ -312,7 +386,7 @@ const Dashboard = () => {
                 Results may vary based on individual commitment and consistency.
               </p>
             </div>
-          </div>
+          </GlareHover>
         </div>
       </section>
     </div>
