@@ -159,10 +159,20 @@ All colors MUST be HSL.
   }
 
   .text-gradient-gold {
-    background: var(--gradient-gold);
+    background: linear-gradient(135deg, #FFD700, #FFA500);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    color: #FFD700; /* Fallback color */
+    font-weight: bold;
+  }
+
+  /* Fallback for browsers that don't support background-clip */
+  @supports not (-webkit-background-clip: text) {
+    .text-gradient-gold {
+      color: #FFD700 !important;
+      background: none !important;
+    }
   }
 }
 

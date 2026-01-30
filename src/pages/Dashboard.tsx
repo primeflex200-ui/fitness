@@ -243,7 +243,7 @@ const Dashboard = () => {
           >
             <div className="p-8 text-center">
               <h1 className="text-4xl md:text-5xl font-bold mb-4 text-black">
-                Welcome Back, <span className="text-gradient-gold">{userName}</span>
+                Welcome Back, <span className="text-gradient-gold" style={{ color: '#FFD700' }}>{userName}</span>
               </h1>
               <p className="text-xl text-gray-700 max-w-2xl mx-auto">
                 Ready to crush your fitness goals today? Your personalized dashboard awaits.
