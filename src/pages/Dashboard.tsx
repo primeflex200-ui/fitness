@@ -186,32 +186,32 @@ const Dashboard = () => {
       </div>
       
       {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40 relative">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+      <header className="border-b border-white/10 bg-white/5 backdrop-blur-md sticky top-0 z-40 relative">
+        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <PrimeFlexLogo showText size="md" />
             {isAdminUser && (
-              <Badge variant="secondary" className="ml-2">
+              <Badge variant="secondary" className="ml-2 premium-button">
                 <Shield className="w-3 h-3 mr-1" />
                 Admin
               </Badge>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {isAdminUser && (
               <Link to="/admin">
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="premium-button">
                   <Shield className="w-4 h-4 mr-2" />
                   Admin Panel
                 </Button>
               </Link>
             )}
             <Link to="/settings">
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="premium-button">
                 <Settings className="w-5 h-5" />
               </Button>
             </Link>
-            <Button variant="ghost" size="icon" onClick={handleLogout}>
+            <Button variant="ghost" size="icon" onClick={handleLogout} className="premium-button">
               <LogOut className="w-5 h-5" />
             </Button>
           </div>
@@ -219,17 +219,26 @@ const Dashboard = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="py-8 px-4 bg-gradient-to-b from-card/30 to-transparent relative z-10">
+      <section className="py-12 px-6 bg-gradient-to-b from-white/5 to-transparent relative z-10">
         <div className="container mx-auto">
-          <h1 className="text-3xl font-bold mb-6">Welcome Back, {userName}</h1>
+          <div className="premium-card-large max-w-4xl mx-auto text-center">
+            <div className="p-8">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4 premium-text-primary">
+                Welcome Back, <span className="text-gradient-gold">{userName}</span>
+              </h1>
+              <p className="text-xl premium-text-secondary max-w-2xl mx-auto">
+                Ready to crush your fitness goals today? Your personalized dashboard awaits.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Features Grid */}
       <section className="py-6 px-4 relative z-10">
         <div className="container mx-auto">
-          <h2 className="text-2xl font-bold mb-6">Your Fitness Tools</h2>
-          <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          <h2 className="text-3xl font-bold mb-8 premium-text-primary">Your Fitness Tools</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {features.map((feature, i) => (
               <Link 
                 to={feature.link} 
@@ -241,13 +250,30 @@ const Dashboard = () => {
                     setTimeout(() => setClickedElement(null), 1500);
                   }
                 }}
+                className="group"
               >
-                <Card className="feature-card bg-card border-border hover:border-primary transition-all hover-scale cursor-pointer h-full">
-                  <CardContent className="p-6 flex flex-col items-center text-center gap-3">
-                    <feature.icon className={`w-8 h-8 ${feature.color}`} />
-                    <h3 className="text-sm font-semibold">{feature.title}</h3>
-                  </CardContent>
-                </Card>
+                <div className="feature-card premium-card-large cursor-pointer h-full">
+                  <div className="p-6 flex flex-col h-full">
+                    <div className="flex items-start gap-4 mb-4">
+                      <div className="premium-icon-container flex-shrink-0">
+                        <feature.icon className="w-8 h-8 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-xl font-bold premium-text-primary mb-2 group-hover:text-primary transition-colors">
+                          {feature.title}
+                        </h3>
+                        <p className="premium-text-secondary text-sm leading-relaxed">
+                          {feature.desc}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-auto">
+                      <div className="w-full h-1 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-full">
+                        <div className="h-full bg-gradient-to-r from-primary to-secondary rounded-full w-0 group-hover:w-full transition-all duration-500"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </Link>
             ))}
           </div>
@@ -255,35 +281,38 @@ const Dashboard = () => {
       </section>
 
       {/* Quick Action */}
-      <section className="py-8 px-4">
+      <section className="py-12 px-6">
         <div className="container mx-auto">
-          <Card className="bg-gradient-to-r from-primary/20 to-secondary/20 border-primary/50">
-            <CardContent className="py-8 text-center">
-              <Brain className="w-12 h-12 text-primary mx-auto mb-4" />
-              <h3 className="text-xl font-bold mb-2">Ready for Today's Workout?</h3>
-              <p className="text-muted-foreground mb-4">Let's crush your goals together</p>
+          <div className="premium-card-large max-w-2xl mx-auto">
+            <div className="p-8 text-center">
+              <div className="premium-icon-container mx-auto mb-6">
+                <Brain className="w-10 h-10 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold mb-3 premium-text-primary">Ready for Today's Workout?</h3>
+              <p className="premium-text-secondary mb-6 text-lg">Let's crush your goals together and build the best version of yourself</p>
               <Link to="/workouts">
-                <Button variant="hero" size="lg">
+                <Button variant="hero" size="lg" className="text-lg px-8 py-4">
                   Start Training
                 </Button>
               </Link>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Disclaimer Footer */}
-      <section className="py-8 px-4 bg-muted/30">
+      <section className="py-12 px-6 bg-white/5">
         <div className="container mx-auto">
-          <Card className="border-primary/30 bg-card/50">
-            <CardContent className="py-6 text-center">
-              <p className="text-sm text-muted-foreground">
-                <strong>Important:</strong> Access features based on your fitness goals. 
+          <div className="premium-card max-w-4xl mx-auto">
+            <div className="p-8 text-center">
+              <h4 className="text-lg font-semibold premium-text-primary mb-4">Important Notice</h4>
+              <p className="premium-text-secondary leading-relaxed">
+                Access features based on your fitness goals. 
                 Consult professionals before starting any new diet or training plan. 
                 Results may vary based on individual commitment and consistency.
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </section>
     </div>

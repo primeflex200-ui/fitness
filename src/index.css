@@ -139,6 +139,61 @@ All colors MUST be HSL.
     @apply transition-shadow duration-300 hover:glow-gold;
   }
 
+  /* Premium Card Styles */
+  .premium-card {
+    @apply bg-white/95 dark:bg-white/10 backdrop-blur-sm border border-white/20 dark:border-white/10;
+    border-radius: 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .premium-card:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.1);
+  }
+
+  .premium-card-large {
+    @apply bg-white/95 dark:bg-white/10 backdrop-blur-sm border border-white/20 dark:border-white/10;
+    border-radius: 24px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: 180px;
+  }
+
+  .premium-card-large:hover {
+    transform: translateY(-6px) scale(1.01);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18), 0 12px 24px rgba(0, 0, 0, 0.12);
+  }
+
+  .premium-text-primary {
+    @apply text-gray-900 dark:text-white font-semibold;
+  }
+
+  .premium-text-secondary {
+    @apply text-gray-600 dark:text-gray-300;
+  }
+
+  .premium-text-muted {
+    @apply text-gray-500 dark:text-gray-400;
+  }
+
+  .premium-icon-container {
+    @apply w-16 h-16 rounded-2xl flex items-center justify-center;
+    background: linear-gradient(135deg, hsl(51, 100%, 50%), hsl(45, 93%, 47%));
+    box-shadow: 0 4px 16px rgba(255, 215, 0, 0.3);
+  }
+
+  .premium-button {
+    @apply bg-white/95 dark:bg-white/10 backdrop-blur-sm border border-white/20 dark:border-white/10;
+    border-radius: 16px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .premium-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  }
+
   /* Smooth scrolling optimizations for 144 FPS */
   .smooth-scroll {
     scroll-behavior: smooth;

@@ -359,7 +359,7 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background relative auth-container" style={{ 
+    <div className="min-h-screen flex items-center justify-center p-6 bg-background relative auth-container" style={{ 
       overflowY: 'auto',
       overflowX: 'hidden',
       WebkitOverflowScrolling: 'touch'
@@ -379,45 +379,45 @@ const Auth = () => {
       /> */}
       
       <div className="w-full max-w-2xl animate-fade-in relative z-10">
-        {/* Back Button - White Color */}
+        {/* Back Button - Premium Style */}
         <Link 
           to="/" 
-          className="inline-flex items-center gap-2 text-white hover:text-yellow-500 transition-colors mb-6 font-medium"
+          className="inline-flex items-center gap-2 premium-button px-4 py-2 mb-8 font-medium text-gray-900 dark:text-white hover:text-primary transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
           <span>Back to Home</span>
         </Link>
         
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center justify-center gap-2 mb-4">
+          <Link to="/" className="inline-flex items-center justify-center gap-2 mb-6">
             <PrimeFlexLogo showText size="lg" />
           </Link>
-          <p className="text-muted-foreground">Your fitness journey starts here</p>
+          <p className="premium-text-secondary text-lg">Your fitness journey starts here</p>
         </div>
 
-        <Card className="border-border">
-            <CardHeader>
-              <CardTitle>Welcome</CardTitle>
-              <CardDescription>Sign in or create your account</CardDescription>
-            </CardHeader>
-            <CardContent>
+        <div className="premium-card-large">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold premium-text-primary mb-2">Welcome</h2>
+              <p className="premium-text-secondary">Sign in or create your account</p>
+            </div>
+            <div>
             <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 mb-6 premium-button">
+                <TabsTrigger value="login" className="premium-button">Login</TabsTrigger>
+                <TabsTrigger value="signup" className="premium-button">Sign Up</TabsTrigger>
               </TabsList>
 
               <TabsContent value="login">
-                <form onSubmit={handleLogin} className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="login-email">Email *</Label>
+                <form onSubmit={handleLogin} className="space-y-6 max-h-[500px] overflow-y-auto pr-2">
+                  <div className="space-y-3">
+                    <Label htmlFor="login-email" className="premium-text-primary font-medium">Email *</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input 
                         id="login-email" 
                         type="email" 
                         placeholder="your@email.com" 
-                        className="pl-10"
+                        className="pl-10 premium-button"
                         value={loginEmail}
                         onChange={(e) => setLoginEmail(e.target.value)}
                         required 
