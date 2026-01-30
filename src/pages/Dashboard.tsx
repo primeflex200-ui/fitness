@@ -242,10 +242,10 @@ const Dashboard = () => {
             }}
           >
             <div className="p-8 text-center">
-              <h1 className="text-4xl md:text-5xl font-bold mb-4 premium-text-primary">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4 text-black">
                 Welcome Back, <span className="text-gradient-gold">{userName}</span>
               </h1>
-              <p className="text-xl premium-text-secondary max-w-2xl mx-auto">
+              <p className="text-xl text-gray-700 max-w-2xl mx-auto">
                 Ready to crush your fitness goals today? Your personalized dashboard awaits.
               </p>
             </div>
@@ -297,10 +297,10 @@ const Dashboard = () => {
                         <feature.icon className="w-8 h-8 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-xl font-bold premium-text-primary mb-2 group-hover:text-primary transition-colors">
+                        <h3 className="text-xl font-bold text-black mb-2 group-hover:text-primary transition-colors">
                           {feature.title}
                         </h3>
-                        <p className="premium-text-secondary text-sm leading-relaxed">
+                        <p className="text-gray-700 text-sm leading-relaxed">
                           {feature.desc}
                         </p>
                       </div>
@@ -344,8 +344,8 @@ const Dashboard = () => {
               <div className="premium-icon-container mx-auto mb-6">
                 <Brain className="w-10 h-10 text-white" />
               </div>
-              <h3 className="text-2xl font-bold mb-3 premium-text-primary">Ready for Today's Workout?</h3>
-              <p className="premium-text-secondary mb-6 text-lg">Let's crush your goals together and build the best version of yourself</p>
+              <h3 className="text-2xl font-bold mb-3 text-black">Ready for Today's Workout?</h3>
+              <p className="text-gray-700 mb-6 text-lg">Let's crush your goals together and build the best version of yourself</p>
               <Link to="/workouts">
                 <Button variant="hero" size="lg" className="text-lg px-8 py-4">
                   Start Training
@@ -379,8 +379,8 @@ const Dashboard = () => {
             }}
           >
             <div className="p-8 text-center">
-              <h4 className="text-lg font-semibold premium-text-primary mb-4">Important Notice</h4>
-              <p className="premium-text-secondary leading-relaxed">
+              <h4 className="text-lg font-semibold text-black mb-4">Important Notice</h4>
+              <p className="text-gray-700 leading-relaxed">
                 Access features based on your fitness goals. 
                 Consult professionals before starting any new diet or training plan. 
                 Results may vary based on individual commitment and consistency.

@@ -204,15 +204,15 @@ All colors MUST be HSL.
   }
 
   .premium-text-primary {
-    @apply text-gray-900 dark:text-white font-semibold;
+    @apply text-black dark:text-black font-semibold;
   }
 
   .premium-text-secondary {
-    @apply text-gray-600 dark:text-gray-300;
+    @apply text-gray-700 dark:text-gray-700;
   }
 
   .premium-text-muted {
-    @apply text-gray-500 dark:text-gray-400;
+    @apply text-gray-600 dark:text-gray-600;
   }
 
   .premium-icon-container {
