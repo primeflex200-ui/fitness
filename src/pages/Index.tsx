@@ -5,7 +5,7 @@ import { Dumbbell, Zap, Target, TrendingUp } from "lucide-react";
 
 const Index = () => {
   return (
-    <div className="relative min-h-screen bg-black overflow-hidden">
+    <div className="relative min-h-screen bg-black">
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-12">
         {/* Logo Icon */}

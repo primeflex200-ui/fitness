@@ -166,7 +166,7 @@ const Dashboard = () => {
     : baseFeatures;
 
   return (
-    <div className="min-h-screen bg-background relative" style={{ scrollBehavior: 'smooth' }}>
+    <div className="min-h-screen bg-background relative">
       {/* Gooey Click Effect */}
       {clickedElement && <GooeyEffect targetElement={clickedElement} />}
       
