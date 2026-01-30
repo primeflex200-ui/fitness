@@ -256,7 +256,7 @@ const Dashboard = () => {
       {/* Features Grid */}
       <section className="py-6 px-4 relative z-10">
         <div className="container mx-auto">
-          <h2 className="text-3xl font-bold mb-8 premium-text-primary">Your Fitness Tools</h2>
+          <h2 className="text-3xl font-bold mb-8 text-white">Your Fitness Tools</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {features.map((feature, i) => (
               <Link 
