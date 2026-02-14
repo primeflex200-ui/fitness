@@ -8,6 +8,11 @@
   position: relative;
   display: grid;
   place-items: center;
+  /* Performance optimizations */
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
 }
 
 .glare-hover::before {
@@ -21,12 +26,17 @@
     hsla(0, 0%, 0%, 0),
     hsla(0, 0%, 0%, 0) 100%
   );
-  transition: var(--gh-duration) ease;
+  transition: transform var(--gh-duration) cubic-bezier(0.4, 0, 0.2, 1);
   background-size: var(--gh-size) var(--gh-size), 100% 100%;
   background-repeat: no-repeat;
-  background-position: -100% -100%, 0 0;
+  background-position: 0% 0%, 0 0;
   pointer-events: none;
   z-index: 1;
+  /* Performance optimizations */
+  will-change: transform;
+  transform: translateX(-100%) translateZ(0);
+  backface-visibility: hidden;
+  contain: layout style paint;
 }
 
 .glare-hover:hover {
@@ -34,7 +44,7 @@
 }
 
 .glare-hover:hover::before {
-  background-position: 100% 100%, 0 0;
+  transform: translateX(100%) translateZ(0);
 }
 
 .glare-hover--play-once::before {
@@ -42,12 +52,15 @@
 }
 
 .glare-hover--play-once:hover::before {
-  transition: var(--gh-duration) ease;
-  background-position: 100% 100%, 0 0;
+  transition: transform var(--gh-duration) cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateX(100%) translateZ(0);
 }
 
 /* Ensure content is above the glare effect */
 .glare-hover > * {
   position: relative;
   z-index: 2;
+  /* Performance optimization */
+  will-change: auto;
+  transform: translateZ(0);
 }

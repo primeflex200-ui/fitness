@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import LightRays from "@/components/LightRays";
 import GooeyEffect from "@/components/GooeyEffect";
 import GlareHover from "@/components/GlareHover";
+import LogoLoop from "@/components/LogoLoop";
 import { 
   Apple, 
   TrendingUp, 
@@ -31,6 +32,7 @@ import PrimeFlexLogo from "@/components/PrimeFlexLogo";
 
 const Dashboard = () => {
   const [clickedElement, setClickedElement] = useState<HTMLElement | null>(null);
+  const [scrollOpacity, setScrollOpacity] = useState(1);
   const navigate = useNavigate();
   const { isAdmin, signOut, user } = useAuth();
   const [stats, setStats] = useState({
@@ -43,6 +45,16 @@ const Dashboard = () => {
   
   // Check if user is admin by email
   const isAdminUser = user?.email === 'primeflex200@gmail.com' || isAdmin;
+  
+  // Text for the scrolling loop
+  const scrollingText = [
+    { node: <span className="text-white font-semibold text-xl tracking-wide">When guidance becomes accessible, consistency follows.</span> },
+    { node: <span className="text-yellow-400 font-bold text-xl mx-12">✦</span> },
+    { node: <span className="text-white font-semibold text-xl tracking-wide">Transform your fitness journey with expert guidance.</span> },
+    { node: <span className="text-yellow-400 font-bold text-xl mx-12">✦</span> },
+    { node: <span className="text-white font-semibold text-xl tracking-wide">Your personalized fitness companion awaits.</span> },
+    { node: <span className="text-yellow-400 font-bold text-xl mx-12">✦</span> },
+  ];
   
   // Load user name from localStorage
   const [userName, setUserName] = useState(() => {
@@ -134,6 +146,19 @@ const Dashboard = () => {
     return () => clearInterval(interval);
   }, [user]);
 
+  // Scroll-based light rays fade effect
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const maxScroll = 300; // Fade out completely after 300px of scroll
+      const opacity = Math.max(0, 1 - (scrollY / maxScroll));
+      setScrollOpacity(opacity);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const handleLogout = async () => {
     try {
       await signOut();
@@ -167,15 +192,38 @@ const Dashboard = () => {
     : baseFeatures;
 
   return (
-    <div className="min-h-screen bg-background relative" data-scroll-container>
+    <div 
+      className="min-h-screen relative bg-black bg-cover bg-center bg-no-repeat" 
+      data-scroll-container
+      style={{
+        backgroundImage: "url('/main-final-bg.png')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center center',
+        backgroundRepeat: 'no-repeat',
+        backgroundAttachment: 'fixed',
+        willChange: 'transform',
+        transform: 'translateZ(0)',
+        backfaceVisibility: 'hidden',
+        perspective: '1000px',
+        minHeight: '100vh',
+        width: '100%',
+        height: '100%'
+      }}
+    >
+      {/* Fixed Background Overlay for better readability */}
+      <div className="absolute inset-0 bg-black/40 z-0" style={{ willChange: 'opacity', transform: 'translateZ(0)' }}></div>
+      
       {/* Gooey Click Effect */}
       {clickedElement && <GooeyEffect targetElement={clickedElement} />}
       
       {/* Light Rays Background */}
-      <div className="fixed inset-0 w-full h-full z-0 pointer-events-none">
+      <div 
+        className="fixed inset-0 w-full h-full z-0 pointer-events-none transition-opacity duration-300 ease-out"
+        style={{ opacity: scrollOpacity }}
+      >
         <LightRays
           raysOrigin="top-center"
-          raysColor="#00ffff"
+          raysColor="#ffffff"
           raysSpeed={1.5}
           lightSpread={0.8}
           rayLength={1.2}
@@ -219,15 +267,30 @@ const Dashboard = () => {
         </div>
       </header>
 
+      {/* Scrolling Text Loop */}
+      <div className="bg-gradient-to-r from-black/30 via-black/20 to-black/30 backdrop-blur-sm border-b border-white/10 py-4 relative z-30 overflow-hidden">
+        <LogoLoop
+          logos={scrollingText}
+          speed={60}
+          direction="left"
+          logoHeight={32}
+          gap={0}
+          fadeOut={true}
+          fadeOutColor="rgba(0, 0, 0, 0.3)"
+          ariaLabel="Motivational text"
+          className="w-full"
+        />
+      </div>
+
       {/* Hero Section */}
       <section className="py-12 px-6 bg-gradient-to-b from-white/5 to-transparent relative z-10">
         <div className="container mx-auto">
           <GlareHover
             width="100%"
             height="auto"
-            background="rgba(255, 255, 255, 0.95)"
+            background="rgba(255, 255, 255, 0.1)"
             borderRadius="24px"
-            borderColor="rgba(255, 255, 255, 0.2)"
+            borderColor="rgba(255, 255, 255, 0.3)"
             glareColor="#FFD700"
             glareOpacity={0.3}
             glareAngle={-45}
@@ -235,17 +298,17 @@ const Dashboard = () => {
             transitionDuration={1000}
             className="max-w-4xl mx-auto"
             style={{
-              background: 'rgba(255, 255, 255, 0.95)',
+              background: 'rgba(255, 255, 255, 0.1)',
               backdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
+              border: '2px solid rgba(255, 255, 255, 0.3)',
               boxShadow: '0 12px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08)'
             }}
           >
             <div className="p-8 text-center">
-              <h1 className="text-4xl md:text-5xl font-bold mb-4 text-black">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4 text-white">
                 Welcome Back, <span className="text-gradient-gold" style={{ color: '#FFD700' }}>{userName}</span>
               </h1>
-              <p className="text-xl text-gray-700 max-w-2xl mx-auto">
+              <p className="text-xl text-white max-w-2xl mx-auto">
                 Ready to crush your fitness goals today? Your personalized dashboard awaits.
               </p>
             </div>
@@ -274,40 +337,40 @@ const Dashboard = () => {
                 <GlareHover
                   width="100%"
                   height="180px"
-                  background="rgba(255, 255, 255, 0.95)"
+                  background="rgba(255, 255, 255, 0.1)"
                   borderRadius="24px"
-                  borderColor="rgba(255, 255, 255, 0.2)"
+                  borderColor="rgba(255, 255, 255, 0.3)"
                   glareColor="#FFD700"
-                  glareOpacity={0.4}
+                  glareOpacity={0.3}
                   glareAngle={-30}
-                  glareSize={300}
-                  transitionDuration={800}
+                  glareSize={200}
+                  transitionDuration={600}
                   playOnce={false}
                   className="feature-card cursor-pointer h-full"
                   style={{
-                    background: 'rgba(255, 255, 255, 0.95)',
+                    background: 'rgba(255, 255, 255, 0.1)',
                     backdropFilter: 'blur(12px)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    border: '2px solid rgba(255, 255, 255, 0.3)',
                     boxShadow: '0 12px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08)'
                   }}
                 >
                   <div className="p-6 flex flex-col h-full">
                     <div className="flex items-start gap-4 mb-4">
-                      <div className="premium-icon-container flex-shrink-0">
-                        <feature.icon className="w-8 h-8 text-yellow-700" />
+                      <div className="premium-icon-container flex-shrink-0 group-hover:bg-yellow-500/10 group-hover:shadow-[0_0_8px_rgba(255,215,0,0.4)] transition-all duration-200 rounded-xl p-2">
+                        <feature.icon className="w-8 h-8 text-yellow-700 group-hover:text-yellow-400 transition-colors duration-200" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-xl font-bold text-black mb-2 group-hover:text-primary transition-colors">
+                        <h3 className="text-xl font-bold text-white mb-2 group-hover:text-primary transition-colors duration-200">
                           {feature.title}
                         </h3>
-                        <p className="text-gray-700 text-sm leading-relaxed">
+                        <p className="text-gray-200 text-sm leading-relaxed">
                           {feature.desc}
                         </p>
                       </div>
                     </div>
                     <div className="mt-auto">
                       <div className="w-full h-1 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-full">
-                        <div className="h-full bg-gradient-to-r from-primary to-secondary rounded-full w-0 group-hover:w-full transition-all duration-500"></div>
+                        <div className="h-full bg-gradient-to-r from-primary to-secondary rounded-full w-0 group-hover:w-full transition-all duration-300"></div>
                       </div>
                     </div>
                   </div>
@@ -324,9 +387,9 @@ const Dashboard = () => {
           <GlareHover
             width="100%"
             height="auto"
-            background="rgba(255, 255, 255, 0.95)"
+            background="rgba(255, 255, 255, 0.1)"
             borderRadius="24px"
-            borderColor="rgba(255, 255, 255, 0.2)"
+            borderColor="rgba(255, 255, 255, 0.3)"
             glareColor="#FFD700"
             glareOpacity={0.4}
             glareAngle={-60}
@@ -334,18 +397,18 @@ const Dashboard = () => {
             transitionDuration={900}
             className="max-w-2xl mx-auto"
             style={{
-              background: 'rgba(255, 255, 255, 0.95)',
+              background: 'rgba(255, 255, 255, 0.1)',
               backdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
+              border: '2px solid rgba(255, 255, 255, 0.3)',
               boxShadow: '0 12px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08)'
             }}
           >
             <div className="p-8 text-center">
-              <div className="premium-icon-container mx-auto mb-6">
-                <Brain className="w-10 h-10 text-yellow-700" />
+              <div className="premium-icon-container mx-auto mb-6 hover:bg-yellow-500/10 hover:shadow-[0_0_8px_rgba(255,215,0,0.4)] transition-all duration-200 rounded-xl p-3">
+                <Brain className="w-10 h-10 text-yellow-700 hover:text-yellow-400 transition-colors duration-200" />
               </div>
-              <h3 className="text-2xl font-bold mb-3 text-black">Ready for Today's Workout?</h3>
-              <p className="text-gray-700 mb-6 text-lg">Let's crush your goals together and build the best version of yourself</p>
+              <h3 className="text-2xl font-bold mb-3 text-white">Ready for Today's Workout?</h3>
+              <p className="text-gray-200 mb-6 text-lg">Let's crush your goals together and build the best version of yourself</p>
               <Link to="/workouts">
                 <Button variant="hero" size="lg" className="text-lg px-8 py-4">
                   Start Training
@@ -362,9 +425,9 @@ const Dashboard = () => {
           <GlareHover
             width="100%"
             height="auto"
-            background="rgba(255, 255, 255, 0.95)"
+            background="rgba(255, 255, 255, 0.1)"
             borderRadius="20px"
-            borderColor="rgba(255, 255, 255, 0.2)"
+            borderColor="rgba(255, 255, 255, 0.3)"
             glareColor="#FFD700"
             glareOpacity={0.2}
             glareAngle={-20}
@@ -372,15 +435,15 @@ const Dashboard = () => {
             transitionDuration={700}
             className="max-w-4xl mx-auto"
             style={{
-              background: 'rgba(255, 255, 255, 0.95)',
+              background: 'rgba(255, 255, 255, 0.1)',
               backdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
+              border: '2px solid rgba(255, 255, 255, 0.3)',
               boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05)'
             }}
           >
             <div className="p-8 text-center">
-              <h4 className="text-lg font-semibold text-black mb-4">Important Notice</h4>
-              <p className="text-gray-700 leading-relaxed">
+              <h4 className="text-lg font-semibold text-white mb-4">Important Notice</h4>
+              <p className="text-gray-200 leading-relaxed">
                 Access features based on your fitness goals. 
                 Consult professionals before starting any new diet or training plan. 
                 Results may vary based on individual commitment and consistency.

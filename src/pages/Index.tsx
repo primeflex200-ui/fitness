@@ -5,9 +5,24 @@ import { Dumbbell, Zap, Target, TrendingUp } from "lucide-react";
 
 const Index = () => {
   return (
-    <div className="relative min-h-screen bg-black">
+    <div 
+      className="relative min-h-screen bg-black bg-cover bg-center bg-no-repeat"
+      style={{
+        backgroundImage: "url('/dashboard-bg-new.png')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        willChange: 'transform',
+        transform: 'translateZ(0)',
+        backfaceVisibility: 'hidden',
+        perspective: '1000px'
+      }}
+    >
+      {/* Dark overlay for better text readability */}
+      <div className="absolute inset-0 bg-black/40 z-0" style={{ willChange: 'opacity', transform: 'translateZ(0)' }}></div>
+      
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-12">
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-12" style={{ willChange: 'transform', transform: 'translateZ(0)' }}>
         {/* Logo Icon */}
         <div className="mb-8 animate-fade-in">
           <Dumbbell className="w-16 h-16 text-primary animate-pulse" />

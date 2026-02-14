@@ -260,3 +260,214 @@ All colors MUST be HSL.
     -webkit-overflow-scrolling: touch;
   }
 }
+
+/* Additional animation keyframes */
+@keyframes slideInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out;
+}
+
+.animate-slide-in-up {
+  animation: slideInUp 0.5s ease-out;
+}
+/* Performance optimizations for smoother experience */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Scroll performance optimizations */
+html {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+body {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* GPU acceleration for smooth animations and scrolling */
+.animate-fade-in,
+.animate-slide-in-up,
+[data-scroll-container],
+.premium-card,
+.feature-card,
+.glare-hover,
+.logoloop__track,
+.light-rays-container,
+.min-h-screen {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+  -webkit-transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  -webkit-perspective: 1000px;
+}
+
+/* Background image optimization for smooth scrolling */
+[style*="background-image"] {
+  will-change: transform;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  background-attachment: scroll !important;
+}
+
+/* Optimize fixed backgrounds for mobile */
+@media (max-width: 768px) {
+  [style*="background-attachment: fixed"] {
+    background-attachment: scroll !important;
+    background-size: cover !important;
+    background-position: center center !important;
+  }
+  
+  [data-scroll-container] {
+    background-attachment: scroll !important;
+    min-height: 100vh !important;
+  }
+}
+
+/* High-resolution displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  [data-scroll-container][style*="main-final-bg.png"] {
+    background-size: cover !important;
+    image-rendering: -webkit-optimize-contrast;
+  }
+}
+
+/* Ultra-wide screens */
+@media (min-width: 1920px) {
+  [data-scroll-container] {
+    background-size: cover !important;
+    background-position: center center !important;
+  }
+}
+
+/* Ensure full viewport coverage */
+@media (min-height: 1080px) {
+  [data-scroll-container] {
+    min-height: 100vh !important;
+    background-size: cover !important;
+  }
+}
+
+/* Dashboard specific background optimization */
+[data-scroll-container] {
+  position: relative;
+  background-attachment: fixed !important;
+  background-size: cover !important;
+  background-position: center center !important;
+  background-repeat: no-repeat !important;
+}
+
+/* High-resolution background image optimization */
+[data-scroll-container][style*="main-final-bg.png"] {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: high-quality;
+  -ms-interpolation-mode: bicubic;
+}
+
+/* Ensure fixed background works smoothly */
+[style*="background-attachment: fixed"] {
+  will-change: transform;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  background-attachment: fixed !important;
+}
+
+/* Force high-quality rendering */
+.min-h-screen[data-scroll-container] {
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+  background-attachment: fixed;
+  background-position: center center;
+  background-repeat: no-repeat;
+}
+
+/* GPU acceleration for smooth animations */
+.animate-fade-in,
+.animate-slide-in-up,
+[data-scroll-container],
+.premium-card,
+.feature-card,
+.glare-hover,
+.logoloop__track,
+.light-rays-container {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Smooth transitions for all interactive elements */
+button, a, .premium-button, .premium-icon-container {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Optimize image rendering */
+img {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* Reduce layout shifts */
+.container {
+  contain: layout style paint;
+}
+
+/* Smooth scrolling for all containers */
+[data-scroll-container] {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Optimize hover effects */
+.group:hover .group-hover\:text-yellow-400,
+.group:hover .group-hover\:drop-shadow-\[0_0_8px_rgba\(255\,215\,0\,0\.8\)\],
+.group:hover .group-hover\:bg-yellow-500\/20,
+.group:hover .group-hover\:shadow-\[0_0_15px_rgba\(255\,215\,0\,0\.6\)\] {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Optimize backdrop filters */
+.backdrop-blur-sm,
+.backdrop-blur-md {
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+/* Smooth opacity transitions */
+.transition-opacity {
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
